@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Cuotas del Préstamo #{{ prestamo.id }}</h2>
+<table class="table">
+    {% for cuota in cuotas %}
+    <tr>
+        <td>Cuota {{ cuota.numero_cuota }}</td>
+        <td>
+            {% if not cuota.pagada %}
+            <a href="{% url 'pagar_cuota' prestamo.id cuota.id %}" 
+               class="btn btn-sm btn-success">
+               Pagar
+            </a>
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

@@ -1,0 +1,18 @@
+# urls.py
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    # Clientes
+    path('clientes/', views.ListaClientesView.as_view(), name='lista_clientes'),
+    path('clientes/nuevo/', views.CrearClienteView.as_view(), name='crear_cliente'),
+    
+    # Préstamos (anidados bajo cliente)
+    path('clientes/<int:cliente_id>/prestamos/', views.ListaPrestamosClienteView.as_view(), name='lista_prestamos_cliente'),
+    path('clientes/<int:cliente_id>/prestamos/crear/', views.CrearPrestamoView.as_view(), name='crear_prestamo'),
+    path('prestamos/<int:pk>/',  views.DetallePrestamoView.as_view(),  name='detalle_prestamo'),
+    
+    # Cuotas (anidadas bajo préstamo)
+    path('prestamos/<int:prestamo_id>/cuotas/', views.DetallePrestamoView.as_view(), name='detalle_prestamo'),
+    path('prestamos/<int:prestamo_id>/cuotas/<int:cuota_id>/pagar/', views.PagarCuotaView.as_view(), name='pagar_cuota'),
+]

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2>Detalle del Préstamo #{{ object.id }}</h2>
+            <p><strong>Cliente:</strong> {{ object.cliente.nombre_completo }}</p>
+            <p><strong>Monto:</strong> ${{ object.monto }}</p>
+            <p><strong>Tasa de interés:</strong> {{ object.tasa_interes_mensual }}% mensual</p>
+        </div>
+    </div>
+
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Tabla de Amortización</h4>
+        </div>
+        <div class="card-body">
+            <table class="table table-bordered">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Cuota</th>
+                        <th>Valor</th>
+                        <th>Intereses</th>
+                        <th>Capital</th>
+                        <th>Saldo</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cuota in cuotas %}
+                    <tr>
+                        <td>{{ cuota.numero_cuota }}</td>
+                        <td>${{ cuota.valor_cuota }}</td>
+                        <td>${{ cuota.intereses }}</td>
+                        <td>${{ cuota.amortizacion }}</td>
+                        <td>${{ cuota.saldo_pendiente }}</td>
+                        <td>
+                            {% if cuota.pagada %}
+                            <span class="badge bg-success">Pagada</span>
+                            {% else %}
+                            <span class="badge bg-warning">Pendiente</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
