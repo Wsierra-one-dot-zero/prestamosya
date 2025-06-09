@@ -25,3 +25,8 @@ def generar_cuotas(sender, instance, created, **kwargs):
                 saldo_pendiente=max(0, saldo),  # Evita saldo negativo
                 fecha_vencimiento=instance.fecha_creacion + timedelta(days=30*numero)
             )
+
+
+@receiver(post_save, sender=Cuota)
+def actualizar_estado_prestamo(sender, instance, **kwargs):
+    instance.prestamo.actualizar_estado()

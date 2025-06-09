@@ -6,10 +6,28 @@ from .forms import ClienteForm, PrestamoForm
 from django.http import JsonResponse
 from django.utils import timezone
 from django.http import JsonResponse
-from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic.base import TemplateView
 import json
+
+# --- HOME ---
+class BienvenidaView( TemplateView):
+    template_name = 'home/home.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Datos de ejemplo para la versión pública (puedes personalizar)
+        context['caracteristicas'] = [
+            {"icono": "fa-rocket", "titulo": "Rápido", "descripcion": "Solicitudes procesadas en 24h"},
+            {"icono": "fa-percent", "titulo": "Bajas tasas", "descripcion": "Intereses competitivos"},
+            {"icono": "fa-shield-alt", "titulo": "Seguro", "descripcion": "Datos 100% protegidos"}
+        ]
+            
+        return context
+
 
 # --- CLIENTES ---
 class ListaClientesView(ListView):
@@ -120,11 +138,16 @@ class PagarCuotaAjaxView(View):
                 cuota.pagada = True
                 cuota.fecha_pago = timezone.now().date()
                 cuota.save()
+
+                # Actualizar estado del préstamo
+                prestamo = cuota.prestamo
+                prestamo.actualizar_estado()
                 
                 return JsonResponse({
                     'success': True,
                     'cuota_id': cuota.id,
-                    'fecha_pago': cuota.fecha_pago.strftime("%d/%m/%Y")
+                    'fecha_pago': cuota.fecha_pago.strftime("%d/%m/%Y"),
+                    'prestamo_pagado': prestamo.estado == 'PAGADO'
                 })
             except Exception as e:
                 return JsonResponse({

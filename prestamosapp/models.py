@@ -41,7 +41,9 @@ class Prestamo(models.Model):
         return (self.monto * i * (1 + i)**self.numero_cuotas) / ((1 + i)**self.numero_cuotas - 1)
 
     def actualizar_estado(self):
-        if all(cuota.pagada for cuota in self.cuotas.all()):
+        """Actualiza el estado del préstamo basado en las cuotas"""
+        cuotas = self.cuotas.all()
+        if cuotas.count() > 0 and all(cuota.pagada for cuota in cuotas):
             self.estado = 'PAGADO'
             self.save()
 
