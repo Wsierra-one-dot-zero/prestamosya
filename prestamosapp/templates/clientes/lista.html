@@ -6,41 +6,57 @@
 
     <!-- Botón para abrir modal de nuevo cliente -->
     <div class="d-flex justify-content-between mb-4">
-        <h1><i class="fas fa-users me-2"></i>Clientes</h1>
         <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalNuevoCliente">
             <i class="fas fa-plus-circle me-1"></i> Nuevo Cliente
         </button>
     </div>
 
-    <table class="table table-hover">
-        <thead>
-            <tr>
-                <th>Nombre</th>
-                <th>DNI</th>
-                <th>Teléfono</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for cliente in clientes %}
-            <tr>
-                <td>{{ cliente.nombre_completo }}</td>
-                <td>{{ cliente.dni }}</td>
-                <td>{{ cliente.telefono }}</td>
-                <td>
-                    <!-- Botón para abrir modal de préstamo -->
-                    <button class="btn btn-sm btn-primary" 
-                            data-bs-toggle="modal" 
-                            data-bs-target="#modalPrestamo"
-                            data-cliente-id="{{ cliente.id }}"
-                            data-cliente-nombre="{{ cliente.nombre_completo }}">
-                        <i class="fas fa-hand-holding-usd"></i> Crear Préstamo
-                    </button>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="card shadow">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Nombre</th>
+                            <th>CC</th>
+                            <th>Teléfono</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cliente in clientes %}
+                        <tr>
+                            <td>{{ cliente.nombre_completo }}</td>
+                            <td>{{ cliente.dni }}</td>
+                            <td>{{ cliente.telefono }}</td>
+                            <td class="text-center align-middle">  <!-- Botones centrados -->
+                                <div class="d-flex justify-content-center gap-2">  <!-- Contenedor flexible para botones -->
+                                    <!-- Botón para abrir modal de préstamo -->
+                                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal"
+                                        data-bs-target="#modalPrestamo" data-cliente-id="{{ cliente.id }}"
+                                        data-cliente-nombre="{{ cliente.nombre_completo }}">
+                                        <i class="fas fa-hand-holding-usd"></i> Nuevo Préstamo
+                                    </button>
+                                    <!-- Botón para ver préstamo -->
+                                    <a href="{% url 'lista_prestamos_cliente' cliente.id %}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-eye"></i> Ver Préstamos
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4">
+                                <i class="fas fa-info-circle me-2"></i>
+                                No se encontraron Clientes registrados
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
     <!-- Modal para crear préstamo -->
     <div class="modal fade" id="modalPrestamo" tabindex="-1">
@@ -106,48 +122,48 @@
 
 {% block scripts %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    var modalPrestamo = document.getElementById('modalPrestamo');
-    
-    modalPrestamo.addEventListener('show.bs.modal', function (event) {
-        var button = event.relatedTarget;
-        var clienteId = button.getAttribute('data-cliente-id');
-        var clienteNombre = button.getAttribute('data-cliente-nombre');
-        
-        document.getElementById('nombreCliente').textContent = clienteNombre;
-        document.getElementById('clienteId').value = clienteId;
-        
-        // Actualizar el action del formulario
-        var form = document.getElementById('formPrestamo');
-        var actionUrl = "{% url 'crear_prestamo' 0 %}".replace('0', clienteId);
-        form.setAttribute('action', actionUrl);
-    });
-});
+    document.addEventListener('DOMContentLoaded', function () {
+        var modalPrestamo = document.getElementById('modalPrestamo');
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Manejar envío del formulario de cliente via AJAX
-    const formCliente = document.querySelector('#modalNuevoCliente form');
-    if (formCliente) {
-        formCliente.addEventListener('submit', function(e) {
-            e.preventDefault();
-            fetch(this.action, {
-                method: 'POST',
-                body: new FormData(this),
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Cierra el modal y recarga la página
-                    bootstrap.Modal.getInstance(document.getElementById('modalNuevoCliente')).hide();
-                    window.location.reload();
-                }
-            });
+        modalPrestamo.addEventListener('show.bs.modal', function (event) {
+            var button = event.relatedTarget;
+            var clienteId = button.getAttribute('data-cliente-id');
+            var clienteNombre = button.getAttribute('data-cliente-nombre');
+
+            document.getElementById('nombreCliente').textContent = clienteNombre;
+            document.getElementById('clienteId').value = clienteId;
+
+            // Actualizar el action del formulario
+            var form = document.getElementById('formPrestamo');
+            var actionUrl = "{% url 'crear_prestamo' 0 %}".replace('0', clienteId);
+            form.setAttribute('action', actionUrl);
         });
-    }
-});
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        // Manejar envío del formulario de cliente via AJAX
+        const formCliente = document.querySelector('#modalNuevoCliente form');
+        if (formCliente) {
+            formCliente.addEventListener('submit', function (e) {
+                e.preventDefault();
+                fetch(this.action, {
+                    method: 'POST',
+                    body: new FormData(this),
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Cierra el modal y recarga la página
+                            bootstrap.Modal.getInstance(document.getElementById('modalNuevoCliente')).hide();
+                            window.location.reload();
+                        }
+                    });
+            });
+        }
+    });
 </script>
 {% endblock %}
 {% endblock %}

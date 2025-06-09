@@ -13,6 +13,6 @@ urlpatterns = [
     path('prestamos/<int:pk>/',  views.DetallePrestamoView.as_view(),  name='detalle_prestamo'),
     
     # Cuotas (anidadas bajo préstamo)
-    path('prestamos/<int:prestamo_id>/cuotas/', views.DetallePrestamoView.as_view(), name='detalle_prestamo'),
-    path('prestamos/<int:prestamo_id>/cuotas/<int:cuota_id>/pagar/', views.PagarCuotaView.as_view(), name='pagar_cuota'),
+    path('prestamos/<int:prestamo_id>/cuotas/<int:pk>/pagar/', views.PagarCuotaView.as_view(), name='pagar_cuota'),
+    path('pagar-cuota/', views.PagarCuotaAjaxView.as_view(), name='pagar_cuota_ajax'),
 ]

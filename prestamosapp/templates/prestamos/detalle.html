@@ -24,22 +24,35 @@
                         <th>Intereses</th>
                         <th>Capital</th>
                         <th>Saldo</th>
+                        <th>Fecha de Pago</th>
                         <th>Estado</th>
+                        <th>Accion</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for cuota in cuotas %}
-                    <tr>
+                    <tr id="cuota-{{ cuota.id }}">
                         <td>{{ cuota.numero_cuota }}</td>
                         <td>${{ cuota.valor_cuota }}</td>
                         <td>${{ cuota.intereses }}</td>
                         <td>${{ cuota.amortizacion }}</td>
                         <td>${{ cuota.saldo_pendiente }}</td>
+                        <td id="fecha-pago-{{ cuota.id }}">
+                            {% if cuota.fecha_pago %}{{ cuota.fecha_pago|date:"d/m/Y" }}{% endif %}
+                        </td>
                         <td>
                             {% if cuota.pagada %}
                             <span class="badge bg-success">Pagada</span>
                             {% else %}
                             <span class="badge bg-warning">Pendiente</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if not cuota.pagada %}
+                            <button class="btn btn-sm btn-success pagar-cuota" 
+                                    data-cuota-id="{{ cuota.id }}">
+                                <i class="fas fa-check"></i> Pagar
+                            </button>
                             {% endif %}
                         </td>
                     </tr>
@@ -49,4 +62,129 @@
         </div>
     </div>
 </div>
+
+<!-- Modal Confirmación Pago -->
+<div class="modal fade" id="confirmarPagoModal" tabindex="-1" aria-labelledby="confirmarPagoLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="confirmarPagoLabel">Confirmar Pago</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          ¿Estás seguro de que deseas pagar esta cuota?
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-primary" id="confirmarPagoBtn">Confirmar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+
+<!-- Al final de tu base.html o detalle_prestamo.html -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+    <!-- Toast de éxito -->
+    <div id="toastPagoExitoso" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header bg-success text-white">
+            <strong class="me-auto">Éxito</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body">
+            Pago registrado correctamente!
+        </div>
+    </div>
+    
+    <!-- Toast de error -->
+    <div id="toastPagoError" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header bg-danger text-white">
+            <strong class="me-auto">Error</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body">
+            Ocurrió un error al procesar el pago
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        let cuotaIdSeleccionada = null;
+    
+        // Obtener CSRF
+        function getCSRFToken() {
+            return document.querySelector('input[name="csrfmiddlewaretoken"]')?.value || 
+                   document.cookie.match(/csrftoken=([^;]+)/)?.[1];
+        }
+    
+        // Manejar click en botón "Pagar"
+        document.addEventListener('click', function(event) {
+            if (event.target.closest('.pagar-cuota')) {
+                const button = event.target.closest('.pagar-cuota');
+                cuotaIdSeleccionada = button.dataset.cuotaId;
+    
+                // Mostrar modal de confirmación
+                const modal = new bootstrap.Modal(document.getElementById('confirmarPagoModal'));
+                modal.show();
+            }
+        });
+    
+        // Confirmar pago al hacer click en "Confirmar" del modal
+        document.getElementById('confirmarPagoBtn').addEventListener('click', function() {
+            if (!cuotaIdSeleccionada) return;
+    
+            const csrfToken = getCSRFToken();
+    
+            fetch("{% url 'pagar_cuota_ajax' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ cuota_id: cuotaIdSeleccionada })
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Error en la respuesta');
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    const cuotaRow = document.querySelector(`#cuota-${cuotaIdSeleccionada}`);
+                    if (cuotaRow) {
+                        const estadoCell = cuotaRow.querySelector('td:nth-child(7)');
+                        if (estadoCell) estadoCell.innerHTML = '<span class="badge bg-success">Pagada</span>';
+    
+                        const fechaCell = cuotaRow.querySelector(`#fecha-pago-${cuotaIdSeleccionada}`);
+                        if (fechaCell) fechaCell.textContent = data.fecha_pago;
+    
+                        const btnCell = cuotaRow.querySelector('td:last-child');
+                        if (btnCell) btnCell.innerHTML = '';
+    
+                        bootstrap.Toast.getOrCreateInstance(
+                            document.getElementById('toastPagoExitoso')
+                        ).show();
+                    }
+                } else {
+                    bootstrap.Toast.getOrCreateInstance(
+                        document.getElementById('toastPagoError')
+                    ).show();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                bootstrap.Toast.getOrCreateInstance(
+                    document.getElementById('toastPagoError')
+                ).show();
+            });
+    
+            // Cerrar modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('confirmarPagoModal'));
+            modal.hide();
+        });
+    });
+    </script>
+    
 {% endblock %}

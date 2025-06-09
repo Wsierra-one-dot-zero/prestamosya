@@ -63,8 +63,8 @@ class Cuota(models.Model):
     def __str__(self):
         return f"Cuota {self.numero_cuota} - Préstamo #{self.prestamo.id}"
 
-    def marcar_como_pagada(self):
+    def pagar(self):
         self.pagada = True
         self.fecha_pago = timezone.now().date()
         self.save()
-        self.prestamo.actualizar_estado()  # Actualiza el estado del préstamo si todas las cuotas están pagadas
+        return self

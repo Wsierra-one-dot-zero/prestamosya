@@ -1,9 +1,15 @@
 # views.py
-from django.views.generic import ListView, CreateView, UpdateView, DetailView
+from django.views.generic import ListView, CreateView, UpdateView, DetailView, View
 from django.urls import reverse_lazy, reverse
 from .models import Cliente, Prestamo, Cuota
 from .forms import ClienteForm, PrestamoForm
 from django.http import JsonResponse
+from django.utils import timezone
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+import json
 
 # --- CLIENTES ---
 class ListaClientesView(ListView):
@@ -76,6 +82,23 @@ class DetallePrestamoView(DetailView):
         prestamo = self.object
         context['cuotas'] = prestamo.cuotas.all().order_by('numero_cuota')
         return context
+    
+    def post(self, request, *args, **kwargs):
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            cuota_id = request.POST.get('cuota_id')
+            try:
+                cuota = Cuota.objects.get(pk=cuota_id)
+                cuota.pagada = True
+                cuota.fecha_pago = timezone.now().date()
+                cuota.save()
+                return JsonResponse({
+                    'success': True,
+                    'cuota_id': cuota_id,
+                    'fecha_pago': cuota.fecha_pago.strftime("%d/%m/%Y")
+                })
+            except Cuota.DoesNotExist:
+                return JsonResponse({'success': False}, status=404)
+        return super().get(request, *args, **kwargs)
 
 class PagarCuotaView(UpdateView):
     model = Cuota
@@ -86,3 +109,26 @@ class PagarCuotaView(UpdateView):
         return reverse_lazy('detalle_prestamo', kwargs={
             'prestamo_id': self.kwargs['prestamo_id']
         })
+    
+@method_decorator(csrf_exempt, name='dispatch')
+class PagarCuotaAjaxView(View):
+    def post(self, request):
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            try:
+                data = json.loads(request.body)
+                cuota = Cuota.objects.get(pk=data.get('cuota_id'))
+                cuota.pagada = True
+                cuota.fecha_pago = timezone.now().date()
+                cuota.save()
+                
+                return JsonResponse({
+                    'success': True,
+                    'cuota_id': cuota.id,
+                    'fecha_pago': cuota.fecha_pago.strftime("%d/%m/%Y")
+                })
+            except Exception as e:
+                return JsonResponse({
+                    'success': False,
+                    'error': str(e)
+                }, status=400)
+        return JsonResponse({'success': False}, status=403)
