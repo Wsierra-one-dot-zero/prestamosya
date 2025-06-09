@@ -1,5 +1,6 @@
 # views.py
 from django.views.generic import ListView, CreateView, UpdateView, DetailView, View
+from django.contrib.auth.views import LoginView
 from django.urls import reverse_lazy, reverse
 from .models import Cliente, Prestamo, Cuota
 from .forms import ClienteForm, PrestamoForm
@@ -13,7 +14,7 @@ from django.views.generic.base import TemplateView
 import json
 
 # --- HOME ---
-class BienvenidaView( TemplateView):
+class BienvenidaView(LoginRequiredMixin, TemplateView):
     template_name = 'home/home.html'
     
     def get_context_data(self, **kwargs):
@@ -28,9 +29,14 @@ class BienvenidaView( TemplateView):
             
         return context
 
+# --- AUTENTICACIÓN ---
+class CustomLoginView(LoginView):
+    template_name = 'auth/login.html'
+    redirect_authenticated_user = True  # Redirige si ya está autenticado
+
 
 # --- CLIENTES ---
-class ListaClientesView(ListView):
+class ListaClientesView(LoginRequiredMixin, ListView):
     model = Cliente
     template_name = 'clientes/lista.html'
     context_object_name = 'clientes'
@@ -47,7 +53,7 @@ class ListaClientesView(ListView):
         context['form_prestamo'] = PrestamoForm()  # Formulario para modal
         return context
 
-class CrearClienteView(CreateView):
+class CrearClienteView(LoginRequiredMixin, CreateView):
     model = Cliente
     fields = ['dni', 'nombre_completo', 'telefono', 'direccion']
     success_url = reverse_lazy('lista_clientes')
@@ -62,7 +68,7 @@ class CrearClienteView(CreateView):
             })
         return response
 # --- PRÉSTAMOS ---
-class ListaPrestamosClienteView(ListView):
+class ListaPrestamosClienteView(LoginRequiredMixin, ListView):
     model = Prestamo
     template_name = 'prestamos/lista.html'
     context_object_name = 'prestamos'
@@ -76,7 +82,7 @@ class ListaPrestamosClienteView(ListView):
         context['cliente'] = Cliente.objects.get(pk=self.kwargs['cliente_id'])
         return context
 
-class CrearPrestamoView(CreateView):
+class CrearPrestamoView(LoginRequiredMixin, CreateView):
     model = Prestamo
     form_class = PrestamoForm
     template_name = 'prestamos/lista.html'
@@ -91,7 +97,7 @@ class CrearPrestamoView(CreateView):
         return reverse('detalle_prestamo', kwargs={'pk': self.object.pk})
 
 # --- CUOTAS ---
-class DetallePrestamoView(DetailView):
+class DetallePrestamoView(LoginRequiredMixin, DetailView):
     model = Prestamo
     template_name = 'prestamos/detalle.html'
     
@@ -118,7 +124,7 @@ class DetallePrestamoView(DetailView):
                 return JsonResponse({'success': False}, status=404)
         return super().get(request, *args, **kwargs)
 
-class PagarCuotaView(UpdateView):
+class PagarCuotaView(LoginRequiredMixin, UpdateView):
     model = Cuota
     fields = ['pagada', 'fecha_pago']
     template_name = 'cuotas/lista.html'
@@ -129,7 +135,7 @@ class PagarCuotaView(UpdateView):
         })
     
 @method_decorator(csrf_exempt, name='dispatch')
-class PagarCuotaAjaxView(View):
+class PagarCuotaAjaxView(LoginRequiredMixin, View):
     def post(self, request):
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             try:

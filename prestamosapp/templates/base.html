@@ -19,15 +19,37 @@
     </style>
 </head>
 <body>
+    <!-- Barra de navegación superior -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{% url 'home' %}">
+                <i class="fas fa-hand-holding-usd me-2"></i>Préstamos
+            </a>
+            <div class="d-flex align-items-center">
+                {% if user.is_authenticated %}
+                    <span class="me-3">Hola, {{ user.get_username }}</span>
+                    <form method="post" action="{% url 'logout' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                            <i class="fas fa-sign-out-alt me-1"></i> Cerrar sesión
+                        </button>
+                    </form>
+                {% else %}
+                    <a href="{% url 'login' %}" class="btn btn-outline-primary btn-sm">Iniciar sesión</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
     <div class="container-fluid">
         <div class="row">
             <!-- Sidebar -->
             <div class="col-md-2 sidebar p-4">
-                <h4 class="mb-4">
+                <!-- <h4 class="mb-4">
                     <a class="navbar-brand" href="{% url 'home' %}">
                         <i class="fas fa-hand-holding-usd me-2"></i>Préstamos
                     </a>
-                </h4>
+                </h4> -->
                 <ul class="nav flex-column">
                     <li class="nav-item">
                         <a class="nav-link active" href="{% url 'lista_clientes' %}">

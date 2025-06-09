@@ -1,11 +1,16 @@
 # urls.py
 from django.urls import path
+from django.contrib.auth import views as auth_views
 from . import views
 
 urlpatterns = [
 
     # Página de bienvenida
     path('', views.BienvenidaView.as_view(), name='home'),
+
+    # Autenticación
+    path('login/', views.CustomLoginView.as_view(), name='login'),
+    path('logout/', auth_views.LogoutView.as_view(template_name='prestamos/auth/logout.html'), name='logout'),
 
     # Clientes
     path('clientes/', views.ListaClientesView.as_view(), name='lista_clientes'),
