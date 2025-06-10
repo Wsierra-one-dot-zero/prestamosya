@@ -6,7 +6,8 @@ from datetime import timedelta
 
 @receiver(post_save, sender=Prestamo)
 def generar_cuotas(sender, instance, created, **kwargs):
-    if created and instance.estado == 'VIGENTE':  # Asegúrate que el estado sea aprobado
+    # Solo generar cuotas para préstamos tradicionales
+    if created and instance.estado == 'VIGENTE' and instance.tipo == 'TRADICIONAL':
         tasa_mensual = instance.tasa_interes_mensual / 100
         cuota_mensual = instance.calcular_cuota()
         saldo = instance.monto
@@ -22,7 +23,7 @@ def generar_cuotas(sender, instance, created, **kwargs):
                 valor_cuota=cuota_mensual,
                 intereses=intereses,
                 amortizacion=amortizacion,
-                saldo_pendiente=max(0, saldo),  # Evita saldo negativo
+                saldo_pendiente=max(0, saldo),
                 fecha_vencimiento=instance.fecha_creacion + timedelta(days=30*numero)
             )
 

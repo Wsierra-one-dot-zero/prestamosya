@@ -19,9 +19,11 @@ urlpatterns = [
     # Préstamos (anidados bajo cliente)
     path('clientes/<int:cliente_id>/prestamos/', views.ListaPrestamosClienteView.as_view(), name='lista_prestamos_cliente'),
     path('clientes/<int:cliente_id>/prestamos/crear/', views.CrearPrestamoView.as_view(), name='crear_prestamo'),
+    path('clientes<int:cliente_id>/prestamo/dinamico/crear/', views.CrearPrestamoDinamicoView.as_view(), name='crear_prestamo_dinamico'),
     path('prestamos/<int:pk>/',  views.DetallePrestamoView.as_view(),  name='detalle_prestamo'),
     
     # Cuotas (anidadas bajo préstamo)
     path('prestamos/<int:prestamo_id>/cuotas/<int:pk>/pagar/', views.PagarCuotaView.as_view(), name='pagar_cuota'),
     path('pagar-cuota/', views.PagarCuotaAjaxView.as_view(), name='pagar_cuota_ajax'),
+    path('cuotas/dinamico/<int:pk>/pagar/', views.PagarCuotaDinamicaView.as_view(), name='pagar_cuota_dinamica'),
 ]

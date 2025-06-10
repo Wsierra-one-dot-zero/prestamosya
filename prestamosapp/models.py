@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from django.utils import timezone
 from django.db import models
+from decimal import Decimal
 
 class PerfilUsuario(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -25,6 +26,11 @@ class Prestamo(models.Model):
         ('PAGADO', 'Pagado'),
         ('MORA', 'En mora'),
     )
+
+    TIPO_CHOICES = [
+        ('TRADICIONAL', 'Tradicional (Cuotas fijas)'),
+        ('DINAMICO', 'Dinámico (Abono a capital)'),
+    ]
     
     cliente = models.ForeignKey('Cliente', on_delete=models.CASCADE, related_name='prestamos')
     monto = models.DecimalField(max_digits=10, decimal_places=2)
@@ -32,6 +38,7 @@ class Prestamo(models.Model):
     numero_cuotas = models.PositiveIntegerField()
     fecha_creacion = models.DateField(auto_now_add=True)
     estado = models.CharField(max_length=10, choices=ESTADOS, default='VIGENTE')
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default='TRADICIONAL')
 
     def __str__(self):
         return f"Préstamo #{self.id} - {self.cliente.nombre_completo}"
@@ -61,6 +68,7 @@ class Cuota(models.Model):
 
     class Meta:
         ordering = ['numero_cuota']
+        unique_together = ['prestamo', 'numero_cuota']  # Evita duplicados
 
     def __str__(self):
         return f"Cuota {self.numero_cuota} - Préstamo #{self.prestamo.id}"
@@ -70,3 +78,10 @@ class Cuota(models.Model):
         self.fecha_pago = timezone.now().date()
         self.save()
         return self
+    
+    def calcular_interes(self):
+        """Método seguro para calcular intereses"""
+        if not hasattr(self, '_interes_calculado'):
+            tasa = Decimal(str(self.prestamo.tasa_interes_mensual)) / Decimal('100')
+            self._interes_calculado = self.saldo_pendiente * tasa
+        return self._interes_calculado

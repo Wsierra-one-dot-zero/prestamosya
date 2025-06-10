@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import decimal
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -122,6 +123,10 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Redirección después de login (ajusta a tu vista principal)
-LOGIN_REDIRECT_URL = 'home'  
-LOGOUT_REDIRECT_URL = 'login'
+# Authentication settings
+LOGIN_URL = 'login'  # URL de la vista de login
+LOGIN_REDIRECT_URL = 'inicio'  # Página a la que redirigir después del login
+LOGOUT_REDIRECT_URL = 'inicio'  # Página a la que redirigir después del logout
+
+
+decimal.getcontext().prec = 10

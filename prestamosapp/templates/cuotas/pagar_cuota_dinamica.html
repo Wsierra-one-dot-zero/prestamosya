@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h2>Pagar Cuota #{{ object.numero_cuota }}</h2>
+    
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5>Detalles:</h5>
+            <p><strong>Saldo pendiente:</strong> ${{ object.saldo_pendiente|floatformat:2 }}</p>
+            <p><strong>Interés a pagar:</strong> ${{ interes_actual|floatformat:2 }}</p>
+            <p><strong>Fecha límite:</strong> {{ object.fecha_vencimiento|date:"d/m/Y" }}</p>
+        </div>
+    </div>
+    
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="abono_capital" class="form-label">Abono a capital:</label>
+            <input type="number" 
+                   name="abono_capital" 
+                   class="form-control" 
+                   min="0" 
+                   max="{{ object.saldo_pendiente|stringformat:'f' }}" 
+                   step="0.01"
+                   value="0"
+                   required>
+            <small class="text-muted">Máximo: ${{ object.saldo_pendiente|floatformat:2 }}</small>
+        </div>
+        
+        <button type="submit" class="btn btn-success">
+            <i class="fas fa-check"></i> Registrar Pago
+        </button>
+        <a href="{% url 'detalle_prestamo' object.prestamo.id %}" class="btn btn-secondary">
+            Cancelar
+        </a>
+    </form>
+</div>
+{% endblock %}

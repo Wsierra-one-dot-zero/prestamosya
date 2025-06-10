@@ -8,7 +8,7 @@
             <p><strong>Cliente:</strong> {{ object.cliente.nombre_completo }}</p>
             <p><strong>Monto:</strong> ${{ object.monto }}</p>
             <p><strong>Tasa de interés:</strong> {{ object.tasa_interes_mensual }}% mensual</p>
-            <p><strong>Estado:</strong> 
+            <p><strong>Estado:</strong>
                 <span class="badge 
                     {% if object.estado == 'PAGADO' %}bg-success
                     {% elif object.estado == 'VIGENTE' %}bg-primary
@@ -33,6 +33,7 @@
                         <th>Capital</th>
                         <th>Saldo</th>
                         <th>Fecha de Pago</th>
+                        <th>Vencimiento</th>
                         <th>Estado</th>
                         <th>Accion</th>
                     </tr>
@@ -48,6 +49,7 @@
                         <td id="fecha-pago-{{ cuota.id }}">
                             {% if cuota.fecha_pago %}{{ cuota.fecha_pago|date:"d/m/Y" }}{% endif %}
                         </td>
+                        <td>{{ cuota.fecha_vencimiento|date:"d/m/Y" }}</td>
                         <td>
                             {% if cuota.pagada %}
                             <span class="badge bg-success">Pagada</span>
@@ -57,9 +59,15 @@
                         </td>
                         <td>
                             {% if not cuota.pagada %}
-                            <button class="btn btn-sm btn-success pagar-cuota" data-cuota-id="{{ cuota.id }}">
-                                <i class="fas fa-check"></i> Pagar
-                            </button>
+                                {% if prestamo.tipo == 'DINAMICO' %}
+                                    <a href="{% url 'pagar_cuota_dinamica' cuota.id %}" class="btn btn-sm btn-success">
+                                        <i class="fas fa-money-bill-wave"></i> Pagar
+                                    </a>
+                                {% else %}
+                                    <button class="btn btn-sm btn-success pagar-cuota" data-cuota-id="{{ cuota.id }}">
+                                        <i class="fas fa-check"></i> Pagar
+                                    </button>
+                                {% endif %}
                             {% endif %}
                         </td>
                     </tr>
@@ -161,7 +169,7 @@
                     if (data.success) {
                         const cuotaRow = document.querySelector(`#cuota-${cuotaIdSeleccionada}`);
                         if (cuotaRow) {
-                            const estadoCell = cuotaRow.querySelector('td:nth-child(7)');
+                            const estadoCell = cuotaRow.querySelector('td:nth-child(8)');
                             if (estadoCell) estadoCell.innerHTML = '<span class="badge bg-success">Pagada</span>';
 
                             const fechaCell = cuotaRow.querySelector(`#fecha-pago-${cuotaIdSeleccionada}`);

@@ -10,24 +10,23 @@ class ClienteForm(forms.ModelForm):
             'direccion': forms.Textarea(attrs={'rows': 3}),
         }
 
-class PrestamoForm(forms.ModelForm):
+# forms.py
+
+class PrestamoForm(forms.ModelForm):  # Tradicional
     class Meta:
         model = Prestamo
-        fields = ['monto', 'tasa_interes_mensual', 'numero_cuotas']
+        fields = ['monto', 'numero_cuotas', 'tasa_interes_mensual']  # los campos que uses para tradicional
         widgets = {
-            'monto': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'step': '0.01'
-            }),
-            'tasa_interes_mensual': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'step': '0.01'
-            }),
-            'numero_cuotas': forms.NumberInput(attrs={
-                'class': 'form-control'
-            }),
+            'monto': forms.NumberInput(attrs={'class': 'form-control'}),
+            'numero_cuotas': forms.NumberInput(attrs={'class': 'form-control'}),
+            'tasa_interes_mensual': forms.NumberInput(attrs={'class': 'form-control'}),
         }
-        labels = {
-            'tasa_interes_mensual': 'Tasa de interés mensual (%)',
-            'numero_cuotas': 'Número de cuotas'
+
+class PrestamoDinamicoForm(forms.ModelForm):  # Dinámico
+    class Meta:
+        model = Prestamo
+        fields = ['monto', 'tasa_interes_mensual']  # Solo estos para dinámico
+        widgets = {
+            'monto': forms.NumberInput(attrs={'class': 'form-control'}),
+            'tasa_interes_mensual': forms.NumberInput(attrs={'class': 'form-control'}),
         }
