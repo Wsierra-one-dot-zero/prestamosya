@@ -62,6 +62,7 @@ class Cuota(models.Model):
     intereses = models.DecimalField(max_digits=10, decimal_places=2)
     amortizacion = models.DecimalField(max_digits=10, decimal_places=2)
     saldo_pendiente = models.DecimalField(max_digits=10, decimal_places=2)
+    pago_total = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True) # Total pagado por la cuota para prestamos dinamicos
     fecha_pago = models.DateField(null=True, blank=True)  # Se llena al pagar
     pagada = models.BooleanField(default=False)
     fecha_vencimiento = models.DateField()  # Nuevo campo para gestión de mora

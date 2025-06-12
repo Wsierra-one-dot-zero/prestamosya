@@ -118,21 +118,49 @@ class CrearPrestamoDinamicoView(LoginRequiredMixin, CreateView):
         Cuota.objects.create(
             prestamo=self.object,
             numero_cuota=1,
-            valor_cuota=form.instance.monto,
+            valor_cuota=form.instance.monto + (form.instance.monto * (form.instance.tasa_interes_mensual / 100)),
             intereses=form.instance.monto * (form.instance.tasa_interes_mensual / 100),
             amortizacion=0,  # Inicialmente no hay amortización
+            pago_total=0,  # Inicialmente no hay pago total
             saldo_pendiente=form.instance.monto,
             fecha_vencimiento=fecha_vencimiento
         )
         return response
 
     def get_success_url(self):
-        return reverse('detalle_prestamo', kwargs={'pk': self.object.pk})
+        return reverse('detalle_prestamo_dinamico', kwargs={'pk': self.object.pk})
 
 # --- CUOTAS ---
 class DetallePrestamoView(LoginRequiredMixin, DetailView):
     model = Prestamo
     template_name = 'prestamos/detalle.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        prestamo = self.object
+        context['cuotas'] = prestamo.cuotas.all().order_by('numero_cuota')
+        return context
+    
+    def post(self, request, *args, **kwargs):
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            cuota_id = request.POST.get('cuota_id')
+            try:
+                cuota = Cuota.objects.get(pk=cuota_id)
+                cuota.pagada = True
+                cuota.fecha_pago = timezone.now().date()
+                cuota.save()
+                return JsonResponse({
+                    'success': True,
+                    'cuota_id': cuota_id,
+                    'fecha_pago': cuota.fecha_pago.strftime("%d/%m/%Y")
+                })
+            except Cuota.DoesNotExist:
+                return JsonResponse({'success': False}, status=404)
+        return super().get(request, *args, **kwargs)
+    
+class DetallePrestamoDinamicoView(LoginRequiredMixin, DetailView):
+    model = Prestamo
+    template_name = 'prestamos/detalle_PD.html'
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -224,6 +252,7 @@ class PagarCuotaDinamicaView(UpdateView):
             cuota.fecha_pago = timezone.now().date()
             cuota.intereses = interes
             cuota.amortizacion = abono_capital
+            cuota.pago_total = abono_capital + interes
             cuota.save()
             
             # Crear nueva cuota si queda saldo
@@ -232,14 +261,17 @@ class PagarCuotaDinamicaView(UpdateView):
                 nueva_cuota_numero = Cuota.objects.filter(
                     prestamo=cuota.prestamo
                 ).count() + 1
+
+                interes = nuevo_saldo * (Decimal(str(cuota.prestamo.tasa_interes_mensual)) / Decimal('100'))
                 
                 Cuota.objects.create(
                     prestamo=cuota.prestamo,
                     numero_cuota=nueva_cuota_numero,
-                    valor_cuota=nuevo_saldo,
-                    intereses=Decimal('0'),  # Se calculará al pagar
+                    valor_cuota=nuevo_saldo + interes,  # Valor de la nueva cuota
+                    intereses=interes,  # Se calculará al pagar
                     amortizacion=Decimal('0'),
                     saldo_pendiente=nuevo_saldo,
+                    pago_total=Decimal('0'),
                     fecha_vencimiento=cuota.fecha_vencimiento + timedelta(days=30)
                 )
             
@@ -250,4 +282,4 @@ class PagarCuotaDinamicaView(UpdateView):
             return self.form_invalid(form)
         
     def get_success_url(self):
-        return reverse('detalle_prestamo', kwargs={'pk': self.object.prestamo.id})
+        return reverse('detalle_prestamo_dinamico', kwargs={'pk': self.object.prestamo.id})
