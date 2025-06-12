@@ -2,6 +2,7 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from django.db import models
 from decimal import Decimal
+from datetime import timedelta
 
 class PerfilUsuario(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -86,3 +87,40 @@ class Cuota(models.Model):
             tasa = Decimal(str(self.prestamo.tasa_interes_mensual)) / Decimal('100')
             self._interes_calculado = self.saldo_pendiente * tasa
         return self._interes_calculado
+    
+    def pagar_cuota(self, abono_capital):
+        if abono_capital > self.saldo_pendiente:
+            raise ValueError("El abono no puede ser mayor al saldo pendiente")
+        
+        interes = self.saldo_pendiente * (Decimal(str(self.prestamo.tasa_interes_mensual)) / Decimal('100'))
+
+        # Actualizar la cuota actual
+        self.pagada = True
+        self.fecha_pago = timezone.now().date()
+        self.intereses = interes
+        self.amortizacion = abono_capital
+        self.pago_total = abono_capital + interes
+        self.save()
+
+        nuevo_saldo = self.saldo_pendiente - abono_capital
+        prestamo = self.prestamo
+
+        if nuevo_saldo > 0:
+            nueva_cuota_numero = Cuota.objects.filter(prestamo=prestamo).count() + 1
+            nuevo_interes = nuevo_saldo * (Decimal(str(prestamo.tasa_interes_mensual)) / Decimal('100'))
+
+            Cuota.objects.create(
+                prestamo=prestamo,
+                numero_cuota=nueva_cuota_numero,
+                valor_cuota=nuevo_saldo + nuevo_interes,
+                intereses=nuevo_interes,
+                amortizacion=Decimal('0'),
+                saldo_pendiente=nuevo_saldo,
+                pago_total=Decimal('0'),
+                fecha_vencimiento=self.fecha_vencimiento + timedelta(days=30)
+            )
+        else:
+            # No quedan más cuotas: actualizar número total de cuotas en el préstamo
+            total_cuotas = Cuota.objects.filter(prestamo=prestamo).count()
+            prestamo.numero_cuotas = total_cuotas
+            prestamo.save()
