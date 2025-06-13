@@ -1,27 +1,34 @@
-# Usar imagen oficial de Python
+# Imagen base oficial de Python
 FROM python:3.12-slim
 
-# Evitar prompts durante las instalaciones
-ENV DEBIAN_FRONTEND=noninteractive
-
-# Establecer el directorio de trabajo dentro del contenedor
+# Directorio de trabajo en el contenedor
 WORKDIR /app
 
-# Copiar los archivos de requisitos
-COPY requirements.txt .
-
-# Instalar dependencias del sistema y Python
+# Instalar dependencias del sistema necesarias para mysqlclient
 RUN apt-get update && apt-get install -y \
-    build-essential \
+    gcc \
+    default-libmysqlclient-dev \
+    pkg-config \
+    libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
+# Copia solo los archivos de dependencias primero (para aprovechar cache de Docker)
+COPY requirements.txt .
+
+# Instala dependencias de Python
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copiar todo el proyecto Django al contenedor
+# Copia todo el código fuente de la app
 COPY . .
 
-# Exponer el puerto (Django por defecto usa 8000)
+# Crear carpeta para archivos estáticos
+RUN mkdir -p /app/staticfiles
+
+# Recolectar archivos estáticos
+RUN python manage.py collectstatic --noinput
+
+# Expone el puerto 8000
 EXPOSE 8000
 
-# Comando por defecto para ejecutar la aplicación
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+# Comando por defecto para producción
+CMD ["gunicorn", "prestamosya.wsgi:application", "--bind", "0.0.0.0:8000"]
