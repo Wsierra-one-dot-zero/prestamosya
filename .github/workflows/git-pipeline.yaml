@@ -61,8 +61,11 @@ jobs:
               --repository-name "$ECR_REPO_NAME"
           fi
 
-          REGISTRY_ALIAS=$(aws ecr-public describe-registries --region us-east-1 \
-            --query 'registries[0].registryAlias' --output text)
+          URI_REPO=$(aws ecr-public describe-repositories --repository-names "$ECR_REPO_NAME" --region us-east-1 --query 'repositories[0].repositoryUri' --output text)
+          echo "URI_REPO=$URI_REPO" >> $GITHUB_ENV
+          
+          # Get the registry alias
+          REGISTRY_ALIAS=$(echo $URI_REPO | cut -d '/' -f 1)
           echo "REGISTRY_ALIAS=$REGISTRY_ALIAS" >> $GITHUB_ENV
 
       - name: Login to Amazon ECR Public
