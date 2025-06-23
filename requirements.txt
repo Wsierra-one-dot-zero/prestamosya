@@ -2,3 +2,4 @@ Django
 mysqlclient
 python-dotenv
 gunicorn
+boto3

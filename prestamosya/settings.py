@@ -15,6 +15,7 @@ import decimal
 import os
 from dotenv import load_dotenv
 load_dotenv()
+from .secrets_manager import get_secret
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -77,14 +78,16 @@ WSGI_APPLICATION = 'prestamosya.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+db_secret = get_secret("rds!db-d9a26c18-a0cc-4a4c-aa73-820945d749e2") 
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.getenv('MYSQL_DATABASE'),
-        'USER': os.getenv('MYSQL_USER'),
-        'PASSWORD': os.getenv('MYSQL_PASSWORD'),
-        'HOST': os.getenv('MYSQL_HOST', '127.0.0.1'),  # valor por defecto
-        'PORT': os.getenv('MYSQL_PORT', '3306'),
+        'NAME': 'loans',
+        'USER': get_secret('username'),
+        'PASSWORD': get_secret('password'),
+        'HOST': 'my-mysql-db.cup8qceyub9n.us-east-1.rds.amazonaws.com',  # valor por defecto
+        'PORT': '3306',
     }
 }
 
