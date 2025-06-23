@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/*
+      - main
   workflow_dispatch:
     inputs:
       Name_Ecr_Repository:
@@ -42,6 +43,18 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Get version
+        run: |
+          VERSION=$(python -c "from version import __version__; print(__version__)")
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "IMAGE_TAG=${{ github.sha }}" >> $GITHUB_ENV
+          
+          # Get latest tag if any
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -n "$LATEST_TAG" ]; then
+            echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
+          fi
+
       - name: Run Django collectstatic
         run: |
           python manage.py collectstatic --noinput
@@ -73,8 +86,36 @@ jobs:
         run: |
           IMAGE_URI="$URI_REPO:latest"
           docker build -t "$IMAGE_URI" .
+          
+          # Tag with version if available
+          if [ -n "$VERSION" ]; then
+            docker tag "$IMAGE_URI" "$URI_REPO:$VERSION"
+          fi
+          
+          # Tag with latest tag if available
+          if [ -n "$LATEST_TAG" ]; then
+            docker tag "$IMAGE_URI" "$URI_REPO:$LATEST_TAG"
+          fi
 
       - name: Push image to ECR Public
         run: |
           IMAGE_URI="$URI_REPO:latest"
           docker push "$IMAGE_URI"
+          
+          # Push version tag if available
+          if [ -n "$VERSION" ]; then
+            docker push "$URI_REPO:$VERSION"
+          fi
+          
+          # Push latest tag if available
+          if [ -n "$LATEST_TAG" ]; then
+            docker push "$URI_REPO:$LATEST_TAG"
+          fi
+
+      - name: Create GitHub tag
+        if: github.ref == 'refs/heads/main'
+        run: |
+          if [ -n "$VERSION" ]; then
+            git tag -a "$VERSION" -m "Release version $VERSION"
+            git push origin "$VERSION"
+          fi

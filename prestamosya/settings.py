@@ -80,16 +80,25 @@ WSGI_APPLICATION = 'prestamosya.wsgi.application'
 
 db_secret = get_secret("rds!db-d9a26c18-a0cc-4a4c-aa73-820945d749e2") 
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'loans',
-        'USER': get_secret('username'),
-        'PASSWORD': get_secret('password'),
-        'HOST': 'my-mysql-db.cup8qceyub9n.us-east-1.rds.amazonaws.com',  # valor por defecto
-        'PORT': '3306',
+try:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': 'loans',
+            'USER': db_secret['username'],
+            'PASSWORD': db_secret['password'],
+            'HOST': 'my-mysql-db.cup8qceyub9n.us-east-1.rds.amazonaws.com',
+            'PORT': '3306',
+        }
     }
-}
+except Exception as e:
+    print(f"Error al obtener las credenciales de la base de datos: {str(e)}")
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
