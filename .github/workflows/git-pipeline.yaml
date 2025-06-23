@@ -63,22 +63,18 @@ jobs:
 
           URI_REPO=$(aws ecr-public describe-repositories --repository-names "$ECR_REPO_NAME" --region us-east-1 --query 'repositories[0].repositoryUri' --output text)
           echo "URI_REPO=$URI_REPO" >> $GITHUB_ENV
-          
-          # Get the registry alias
-          REGISTRY_ALIAS=$(echo $URI_REPO | cut -d '/' -f 1)
-          echo "REGISTRY_ALIAS=$REGISTRY_ALIAS" >> $GITHUB_ENV
 
       - name: Login to Amazon ECR Public
         run: |
           aws ecr-public get-login-password --region us-east-1 \
-          | docker login --username AWS --password-stdin public.ecr.aws/$REGISTRY_ALIAS
+          | docker login --username AWS --password-stdin $URI_REPO
 
       - name: Build Docker image
         run: |
-          IMAGE_URI="public.ecr.aws/$REGISTRY_ALIAS/$ECR_REPO_NAME:latest"
+          IMAGE_URI="$URI_REPO:latest"
           docker build -t "$IMAGE_URI" .
 
       - name: Push image to ECR Public
         run: |
-          IMAGE_URI="public.ecr.aws/$REGISTRY_ALIAS/$ECR_REPO_NAME:latest"
+          IMAGE_URI="$URI_REPO:latest"
           docker push "$IMAGE_URI"
