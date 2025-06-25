@@ -13,7 +13,7 @@ on:
         default: 'genos/dev/loans-app'
 
 env:
-  ECR_REPO_NAME: ${{ github.event.inputs.Name_Ecr_Repository || 'genos/dev/loans-app' }}  # Valor por defecto
+  ECR_REPO_NAME: ${{ github.event.inputs.Name_Ecr_Repository || 'genos/dev/loans-app' }}
 
 permissions:
   id-token: write
@@ -85,7 +85,7 @@ jobs:
       - name: Build Docker image
         run: |
           IMAGE_URI="$URI_REPO:latest"
-          docker build -t "$IMAGE_URI" .
+          docker build -t "$IMAGE_URI" -f docker/Dockerfile .
           
           # Tag with version if available
           if [ -n "$VERSION" ]; then
@@ -111,6 +111,51 @@ jobs:
           if [ -n "$LATEST_TAG" ]; then
             docker push "$URI_REPO:$LATEST_TAG"
           fi
+
+  Deploy:
+    name: Deploy Application
+    needs: Build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.EnvironmentName || 'dev' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_IAM_ROLE }}
+          aws-region: us-east-1
+
+      - name: Get Infrastructure Outputs
+        id: get_infra_outputs
+        run: |
+          # Get stack name from config
+          INFRA_STACK=$(jq -r '.infra_stack' config.json)
+          
+          # Get all outputs from CloudFormation
+          outputs=$(aws cloudformation describe-stacks \
+            --stack-name "$INFRA_STACK" \
+            --query "Stacks[0].Outputs[*].[OutputKey, OutputValue]" \
+            --output json)
+          
+          # Update config.json with all outputs
+          echo "$outputs" | jq -r '.[] | .[0] as $key | .[1] as $value | .deploy_params.Parameters[] | select(.ParameterKey == $key).ParameterValue = $value' config/config.json > temp.json && mv temp.json config/config.json
+      
+
+      - name: Show config.json
+        run: |
+          cat config.json
+
+      - name: Deploy Application
+        run: |
+          # Deploy with CloudFormation
+          aws cloudformation deploy \
+            --template-file infrastructure/template.yaml \
+            --stack-name "PrestamosYa-${{ github.event.inputs.EnvironmentName || 'dev' }}" \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --parameter-overrides file://config/config.json
 
       - name: Create GitHub tag
         if: github.ref == 'refs/heads/main'

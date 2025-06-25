@@ -10,7 +10,6 @@ RUN apt-get update && apt-get install -y \
     default-libmysqlclient-dev \
     pkg-config \
     libssl-dev \
-    awscli \
     && rm -rf /var/lib/apt/lists/*
 
 # Copia solo los archivos de dependencias primero (para aprovechar cache de Docker)
@@ -31,11 +30,12 @@ RUN mkdir -p /app/staticfiles
 # Recolectar archivos estáticos
 RUN python manage.py collectstatic --noinput
 
-# Realizar migraciones
-RUN python manage.py migrate
-
 # Expone el puerto 8000
 EXPOSE 8000
 
+# Hacer el script de entrada ejecutable
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 # Comando por defecto para producción
-CMD ["gunicorn", "prestamosya.wsgi:application", "--bind", "0.0.0.0:8000"]
+ENTRYPOINT ["/entrypoint.sh"]

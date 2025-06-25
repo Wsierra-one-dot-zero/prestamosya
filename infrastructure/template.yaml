@@ -1,0 +1,206 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Template para despliegue de la aplicación PrestamosYa en ECS'
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: dev
+    Description: Nombre del ambiente (dev, staging, prod)
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: ID de la VPC donde se desplegará la aplicación
+  Subnet1:
+    Type: AWS::EC2::Subnet::Id
+    Description: Primera subnet privada para el ECS
+  Subnet2:
+    Type: AWS::EC2::Subnet::Id
+    Description: Segunda subnet privada para el ECS
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: Security Group para el servicio ECS
+  ECRRepository:
+    Type: String
+    Default: public.ecr.aws/prestamosya
+    Description: Nombre del repositorio ECR público
+  ContainerPort:
+    Type: Number
+    Default: 8000
+    Description: Puerto del contenedor
+  DesiredCount:
+    Type: Number
+    Default: 2
+    Description: Número de instancias deseadas del servicio
+  TaskCpu:
+    Type: Number
+    Default: 256
+    Description: CPU asignada a la tarea (en unidades de 1024)
+  TaskMemory:
+    Type: Number
+    Default: 512
+    Description: Memoria asignada a la tarea (en MB)
+
+Resources:
+  # IAM Role para el servicio ECS
+  ECSServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: ECSAccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'ecs:CreateService'
+                  - 'ecs:UpdateService'
+                  - 'ecs:DeleteService'
+                  - 'ecs:RegisterTaskDefinition'
+                  - 'ecs:DeregisterTaskDefinition'
+                  - 'ecs:UpdateTaskSet'
+                  - 'ecs:DeleteTaskSet'
+                  - 'ecs:UpdateTaskProtection'
+                  - 'ecs:TagResource'
+                  - 'ecs:UntagResource'
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - 'ec2:DescribeSubnets'
+                  - 'ec2:DescribeSecurityGroups'
+                  - 'ec2:DescribeVpcs'
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - 'secretsmanager:GetSecretValue'
+                Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:rds!db-d9a26c18-a0cc-4a4c-aa73-820945d749e2'
+
+  # IAM Role para el task execution
+  ECSExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: ECSTaskExecutionPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'ecr:GetDownloadUrlForLayer'
+                  - 'ecr:BatchGetImage'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: '*'
+
+  # Log Group para CloudWatch
+  CloudWatchLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/ecs/PrestamosYa-${EnvironmentName}'
+      RetentionInDays: 30
+
+  # Task Definition
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Sub 'PrestamosYa-${EnvironmentName}'
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      Cpu: !Ref TaskCpu
+      Memory: !Ref TaskMemory
+      ExecutionRoleArn: !GetAtt ECSExecutionRole.Arn
+      TaskRoleArn: !GetAtt ECSServiceRole.Arn
+      ContainerDefinitions:
+        - Name: prestamosya
+          Image: !Sub '${ECRRepository}:latest'
+          Essential: true
+          PortMappings:
+            - ContainerPort: !Ref ContainerPort
+              Protocol: tcp
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref CloudWatchLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: ecs
+          Environment:
+            - Name: AWS_REGION
+              Value: !Ref AWS::Region
+          Secrets:
+            - Name: DB_SECRET_NAME
+              ValueFrom: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:rds!db-d9a26c18-a0cc-4a4c-aa73-820945d749e2'
+
+  # Service
+  ECSService:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: !Sub 'PrestamosYa-${EnvironmentName}'
+      Cluster: !Ref ECSCluster
+      TaskDefinition: !Ref TaskDefinition
+      DesiredCount: !Ref DesiredCount
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          SecurityGroups:
+            - !Ref SecurityGroup
+          Subnets:
+            - !Ref Subnet1
+            - !Ref Subnet2
+      LoadBalancers:
+        - ContainerName: prestamosya
+          ContainerPort: !Ref ContainerPort
+          TargetGroupArn: !Ref TargetGroup
+      HealthCheckGracePeriodSeconds: 30
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 50
+      CapacityProviderStrategy:
+        - CapacityProvider: FARGATE_SPOT
+          Weight: 1
+          Base: 0
+      SchedulingStrategy: REPLICA
+      DeploymentController:
+        Type: ECS
+      EnableExecuteCommand: true
+      EnableECSManagedTags: true
+      PropagateTags: SERVICE
+
+  # Target Group
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub 'PrestamosYa-${EnvironmentName}-TargetGroup'
+      VpcId: !Ref VpcId
+      Port: !Ref ContainerPort
+      Protocol: HTTP
+      TargetType: ip
+      HealthCheckIntervalSeconds: 30
+      HealthCheckPath: /
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 10
+      HealthyThresholdCount: 3
+      UnhealthyThresholdCount: 3
+
+Outputs:
+  ServiceArn:
+    Description: ARN del servicio ECS
+    Value: !GetAtt ECSService.ServiceArn
+  TaskDefinitionArn:
+    Description: ARN de la definición de tarea
+    Value: !Ref TaskDefinition
+  TargetGroupArn:
+    Description: ARN del Target Group
+    Value: !Ref TargetGroup

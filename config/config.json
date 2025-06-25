@@ -1,0 +1,47 @@
+{
+  "infra_stack": "PrestamosYa-Infra-${{ github.event.inputs.EnvironmentName || 'dev' }}",
+  "deploy_params": {
+    "Parameters": [
+      {
+        "ParameterKey": "EnvironmentName",
+        "ParameterValue": "${{ github.event.inputs.EnvironmentName || 'dev' }}"
+      },
+      {
+        "ParameterKey": "VpcId",
+        "ParameterValue": ""
+      },
+      {
+        "ParameterKey": "Subnet1",
+        "ParameterValue": ""
+      },
+      {
+        "ParameterKey": "Subnet2",
+        "ParameterValue": ""
+      },
+      {
+        "ParameterKey": "SecurityGroup",
+        "ParameterValue": ""
+      },
+      {
+        "ParameterKey": "ECRRepository",
+        "ParameterValue": "public.ecr.aws/prestamosya"
+      },
+      {
+        "ParameterKey": "ContainerPort",
+        "ParameterValue": "8000"
+      },
+      {
+        "ParameterKey": "DesiredCount",
+        "ParameterValue": "2"
+      },
+      {
+        "ParameterKey": "TaskCpu",
+        "ParameterValue": "256"
+      },
+      {
+        "ParameterKey": "TaskMemory",
+        "ParameterValue": "512"
+      }
+    ]
+  }
+}
