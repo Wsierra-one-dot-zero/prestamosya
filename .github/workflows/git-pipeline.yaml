@@ -11,6 +11,10 @@ on:
         description: 'Name of the ECR repository'
         required: true
         default: 'genos/dev/loans-app'
+      environment_name:
+        description: 'Deployment environment (dev, staging, production)'
+        required: true
+        default: 'dev'
 
 env:
   ECR_REPO_NAME: ${{ github.event.inputs.Name_Ecr_Repository || 'genos/dev/loans-app' }}
@@ -55,6 +59,10 @@ jobs:
             echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
           fi
 
+          echo "VERSION=$VERSION"
+          echo "IMAGE_TAG=${{ github.sha }}"
+          echo "LATEST_TAG=$LATEST_TAG"
+
       - name: Run Django collectstatic
         run: |
           python manage.py collectstatic --noinput
@@ -85,7 +93,7 @@ jobs:
       - name: Build Docker image
         run: |
           IMAGE_URI="$URI_REPO:latest"
-          docker build -t "$IMAGE_URI" -f docker/Dockerfile .
+          docker build -t "$IMAGE_URI" -f docker/Dockerfile . --build-arg DOCKER_BUILDKIT=1
           
           # Tag with version if available
           if [ -n "$VERSION" ]; then
@@ -117,7 +125,7 @@ jobs:
     needs: Build
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.EnvironmentName || 'dev' }}
+    environment: ${{ github.event.inputs.environment_name || 'dev' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -153,7 +161,7 @@ jobs:
           # Deploy with CloudFormation
           aws cloudformation deploy \
             --template-file infrastructure/template.yaml \
-            --stack-name "PrestamosYa-${{ github.event.inputs.EnvironmentName || 'dev' }}" \
+            --stack-name "PrestamosYa-${{ github.event.inputs.environment_name || 'dev' }}" \
             --capabilities CAPABILITY_NAMED_IAM \
             --parameter-overrides file://config/config.json
 

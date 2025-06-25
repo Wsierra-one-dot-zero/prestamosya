@@ -34,7 +34,7 @@ RUN python manage.py collectstatic --noinput
 EXPOSE 8000
 
 # Hacer el script de entrada ejecutable
-COPY entrypoint.sh /entrypoint.sh
+COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 # Comando por defecto para producción
