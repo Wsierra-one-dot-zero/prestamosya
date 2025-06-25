@@ -9,5 +9,8 @@ until aws sts get-caller-identity --region us-east-1 2>/dev/null; do
     fi
 done
 
+# Recolectar archivos estáticos
+python manage.py collectstatic --noinput
+
 # Ejecutar Gunicorn
 exec gunicorn prestamosya.wsgi:application --bind 0.0.0.0:8000

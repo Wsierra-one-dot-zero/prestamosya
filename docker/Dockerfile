@@ -27,9 +27,6 @@ RUN python -c "from version import __version__; print('PRESTAMOSYA_VERSION=' + _
 # Crear carpeta para archivos estáticos
 RUN mkdir -p /app/staticfiles
 
-# Recolectar archivos estáticos
-RUN python manage.py collectstatic --noinput
-
 # Expone el puerto 8000
 EXPOSE 8000
 
