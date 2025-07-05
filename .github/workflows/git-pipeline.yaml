@@ -159,15 +159,30 @@ jobs:
             --query "Stacks[0].Outputs[*].[OutputKey, OutputValue]" \
             --output json 2>/dev/null || echo '[]')
           
+          echo "Outputs: $outputs"
+          
           # Update config.json with all outputs
           if [ "$outputs" != "[]" ]; then
             echo "Updating config with CloudFormation outputs..."
-            echo "$outputs" | jq -r '.[] | "\(.[0])=\(.[1])"' | while IFS='=' read -r key value; do
+            # Create a temporary file with the updates
+            cp config/config.json config/config.tmp
+            
+            # Process each output and update the config
+            echo "$outputs" | jq -r '.[] | "\(.[0]) \(.[1] | @json)"' | while read -r key value; do
+              echo "Updating $key with $value"
               # Update the config file with each output
-              jq --arg k "$key" --arg v "$value" \
-                '(.deploy_params.Parameters[] | select(.ParameterKey == $k).ParameterValue) |= $v' \
-                config/config.json > config/temp.json && mv config/temp.json config/config.json
+              jq --arg k "$key" --arg v "$value" '
+                .deploy_params.Parameters |= map(
+                  if .ParameterKey == $k then 
+                    .ParameterValue = ($v | fromjson)
+                  else 
+                    .
+                  end
+                )' config/config.tmp > config/config.tmp2 && mv config/config.tmp2 config/config.tmp
             done
+            
+            # Replace the original file with the updated one
+            mv config/config.tmp config/config.json
           else
             echo "No CloudFormation outputs found or stack doesn't exist"
           fi
