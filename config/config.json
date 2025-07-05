@@ -8,19 +8,31 @@
       },
       {
         "ParameterKey": "VpcId",
-        "ParameterValue": ""
+        "ParameterValue": "${VPCId}"
       },
       {
         "ParameterKey": "Subnet1",
-        "ParameterValue": ""
+        "ParameterValue": "${PublicSubnet1}"
       },
       {
         "ParameterKey": "Subnet2",
-        "ParameterValue": ""
+        "ParameterValue": "${PublicSubnet2}"
       },
       {
         "ParameterKey": "SecurityGroup",
-        "ParameterValue": ""
+        "ParameterValue": "${SecurityGroupId}"
+      },
+      {
+        "ParameterKey": "LoadBalancer",
+        "ParameterValue": "${ALBDNSName}"
+      },
+      {
+        "ParameterKey": "LoadBalancerARN",
+        "ParameterValue": "${ALBArn}"
+      },
+      {
+        "ParameterKey": "ClusterName",
+        "ParameterValue": "${ECSClusterName}"
       },
       {
         "ParameterKey": "ECRRepository",
