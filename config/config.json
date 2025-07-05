@@ -1,10 +1,10 @@
 {
-  "infra_stack": "Base-Infraestructure-${{ github.event.inputs.environment_name || 'dev' }}",
+  "infra_stack": "Base-Infraestructure-${ENV_NAME}",
   "deploy_params": {
     "Parameters": [
       {
         "ParameterKey": "EnvironmentName",
-        "ParameterValue": "${{ github.event.inputs.environment_name || 'dev' }}"
+        "ParameterValue": "${ENV_NAME}"
       },
       {
         "ParameterKey": "VpcId",
@@ -32,7 +32,7 @@
       },
       {
         "ParameterKey": "DesiredCount",
-        "ParameterValue": "2"
+        "ParameterValue": "0"
       },
       {
         "ParameterKey": "TaskCpu",

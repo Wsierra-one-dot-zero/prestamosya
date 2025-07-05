@@ -137,18 +137,40 @@ jobs:
 
       - name: Get Infrastructure Outputs
         id: get_infra_outputs
+        env:
+          ENV_NAME: ${{ github.event.inputs.environment_name || 'dev' }}
         run: |
+          # Install gettext for envsubst
+          sudo apt-get update && sudo apt-get install -y gettext
+          
+          # Create a temporary file with the environment variables
+          echo "INFRA_STACK=Base-Infraestructure-${ENV_NAME}" > .env
+          
+          # Process the config file with environment variables
+          envsubst < config/config.json > config/config.tmp && mv config/config.tmp config/config.json
+          
           # Get stack name from config
           INFRA_STACK=$(jq -r '.infra_stack' config/config.json)
+          echo "Using stack: $INFRA_STACK"
           
           # Get all outputs from CloudFormation
           outputs=$(aws cloudformation describe-stacks \
             --stack-name "$INFRA_STACK" \
             --query "Stacks[0].Outputs[*].[OutputKey, OutputValue]" \
-            --output json)
+            --output json 2>/dev/null || echo '[]')
           
           # Update config.json with all outputs
-          echo "$outputs" | jq -r '.[] | .[0] as $key | .[1] as $value | .deploy_params.Parameters[] | select(.ParameterKey == $key).ParameterValue = $value' config/config.json > temp.json && mv temp.json config/config.json
+          if [ "$outputs" != "[]" ]; then
+            echo "Updating config with CloudFormation outputs..."
+            echo "$outputs" | jq -r '.[] | "\(.[0])=\(.[1])"' | while IFS='=' read -r key value; do
+              # Update the config file with each output
+              jq --arg k "$key" --arg v "$value" \
+                '(.deploy_params.Parameters[] | select(.ParameterKey == $k).ParameterValue) |= $v' \
+                config/config.json > config/temp.json && mv config/temp.json config/config.json
+            done
+          else
+            echo "No CloudFormation outputs found or stack doesn't exist"
+          fi
       
 
       - name: Show config.json
