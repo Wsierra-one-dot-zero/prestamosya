@@ -160,7 +160,7 @@ jobs:
             --output json 2>/dev/null || echo '[]')
           
           echo "Outputs: $outputs"
-          
+
           # Update config.json with all outputs
           if [ "$outputs" != "[]" ]; then
             echo "Updating config with CloudFormation outputs..."
@@ -183,6 +183,9 @@ jobs:
             
             # Replace the original file with the updated one
             mv config/config.tmp config/config.json
+            
+            echo "Updated config.json with CloudFormation outputs"
+            cat config/config.json
           else
             echo "No CloudFormation outputs found or stack doesn't exist"
           fi
