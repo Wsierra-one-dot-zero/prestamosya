@@ -161,33 +161,24 @@ jobs:
           
           echo "Outputs: $outputs"
 
-          # Update config.json with all outputs
           if [ "$outputs" != "[]" ]; then
-            echo "Updating config with CloudFormation outputs..."
-            # Create a temporary file with the updates
-            cp config/config.json config/config.tmp
+            echo "Actualizando placeholders en config.json con outputs de CloudFormation..."
             
-            # Process each output and update the config
-            echo "$outputs" | jq -r '.[] | "\(.[0]) \(.[1] | @json)"' | while read -r key value; do
-              echo "Updating $key with $value"
-              # Update the config file with each output
-              jq --arg k "$key" --arg v "$value" '
-                .deploy_params.Parameters |= map(
-                  if .ParameterKey == $k then 
-                    .ParameterValue = ($v | fromjson)
-                  else 
-                    .
-                  end
-                )' config/config.tmp > config/config.tmp2 && mv config/config.tmp2 config/config.tmp
+            echo "$outputs" | jq -r '.[] | "\(.[0])=\(.[1])"' | while IFS='=' read -r key value; do
+              # Escapar caracteres especiales en el valor para JSON
+              escaped_value=$(printf '%s' "$value" | jq -Rs .)
+              
+              # Reemplazar ${key} en los ParameterValue
+              jq --arg key "$key" --arg val "$value" \
+                '(.deploy_params.Parameters[] | .ParameterValue) |= (gsub("\\${\($key)}"; $val))' \
+                config/config.json > config/temp.json && mv config/temp.json config/config.json
             done
-            
-            # Replace the original file with the updated one
-            mv config/config.tmp config/config.json
-            
-            echo "Updated config.json with CloudFormation outputs"
-            cat config/config.json
+
+            echo "Configuración actualizada:"
+            jq '.' config/config.json
           else
-            echo "No CloudFormation outputs found or stack doesn't exist"
+            echo "Error: No se encontraron outputs."
+            exit 1
           fi
       
 
