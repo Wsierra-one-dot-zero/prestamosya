@@ -168,17 +168,18 @@ jobs:
             cp config/config.json config/config.tmp
             
             # Procesar cada par clave-valor
-            echo "$outputs" | jq -r '.[] | "\(.[0]) \(.[1])"' | while read -r key value; do
+            echo "$outputs" | jq -r '.[] | "\(.[0])	\(.[1])"' | while IFS=$'\t' read -r key value; do
               echo "Reemplazando ${key} con ${value}"
               
-              # Escapar caracteres especiales para sed
-              value_escaped=$(printf '%s\n' "$value" | sed 's/[&/\]/\\\\&/g')
-              
-              # Reemplazar ${KEY} con el valor
-              sed -i "s/\${\($key\)}/$value_escaped/g" config/config.tmp
-              
-              # Reemplazar KEY con el valor (sin llaves)
-              sed -i "s/"$key"/"$value_escaped"/g" config/config.tmp
+              # Usar awk para reemplazar los valores de manera segura
+              awk -v key="$key" -v val="$value" '{
+                # Reemplazar ${KEY}
+                gsub("\$\(" key "\}", val);
+                # Reemplazar KEY (solo si está entre comillas o como valor completo)
+                gsub("\"" key "\"", "\"" val "\"");
+                print;
+              }' config/config.tmp > config/config.tmp2 && \
+              mv config/config.tmp2 config/config.tmp
             done
             
             # Procesar el archivo con jq para formatearlo correctamente
