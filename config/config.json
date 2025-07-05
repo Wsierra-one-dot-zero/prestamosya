@@ -1,10 +1,10 @@
 {
-  "infra_stack": "PrestamosYa-Infra-${{ github.event.inputs.EnvironmentName || 'dev' }}",
+  "infra_stack": "Base-Infraestructure-${{ github.event.inputs.environment_name || 'dev' }}",
   "deploy_params": {
     "Parameters": [
       {
         "ParameterKey": "EnvironmentName",
-        "ParameterValue": "${{ github.event.inputs.EnvironmentName || 'dev' }}"
+        "ParameterValue": "${{ github.event.inputs.environment_name || 'dev' }}"
       },
       {
         "ParameterKey": "VpcId",

@@ -139,7 +139,7 @@ jobs:
         id: get_infra_outputs
         run: |
           # Get stack name from config
-          INFRA_STACK=$(jq -r '.infra_stack' config.json)
+          INFRA_STACK=$(jq -r '.infra_stack' config/config.json)
           
           # Get all outputs from CloudFormation
           outputs=$(aws cloudformation describe-stacks \
@@ -153,7 +153,7 @@ jobs:
 
       - name: Show config.json
         run: |
-          cat config.json
+          cat config/config.json
 
       - name: Deploy Application
         if: github.ref == 'refs/heads/main'
