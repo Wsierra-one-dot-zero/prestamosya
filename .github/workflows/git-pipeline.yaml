@@ -144,7 +144,7 @@ jobs:
           sudo apt-get update && sudo apt-get install -y gettext
           
           # Create a temporary file with the environment variables
-          echo "INFRA_STACK=Base-Infraestructure-${ENV_NAME}" > .env
+          #echo "INFRA_STACK=Base-Infraestructure-${ENV_NAME}" > .env
           
           # Process the config file with environment variables
           envsubst < config/config.json > config/config.tmp && mv config/config.tmp config/config.json

@@ -1,5 +1,5 @@
 {
-  "infra_stack": "Base-Infraestructure-${ENV_NAME}",
+  "infra_stack": "${ENV_NAME}-Base-Infraestructure-Stack",
   "deploy_params": {
     "Parameters": [
       {
