@@ -123,7 +123,6 @@ jobs:
   Deploy:
     name: Deploy Application
     needs: Build
-    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment_name || 'dev' }}
     steps:
@@ -157,6 +156,7 @@ jobs:
           cat config.json
 
       - name: Deploy Application
+        if: github.ref == 'refs/heads/main'
         run: |
           # Deploy with CloudFormation
           aws cloudformation deploy \

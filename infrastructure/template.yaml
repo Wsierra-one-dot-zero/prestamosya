@@ -23,20 +23,20 @@ Parameters:
     Default: public.ecr.aws/prestamosya
     Description: Nombre del repositorio ECR público
   ContainerPort:
-    Type: Number
-    Default: 8000
+    Type: String
+    Default: "8000"
     Description: Puerto del contenedor
   DesiredCount:
-    Type: Number
-    Default: 2
+    Type: String
+    Default: "0"
     Description: Número de instancias deseadas del servicio
   TaskCpu:
-    Type: Number
-    Default: 256
+    Type: String
+    Default: "256"
     Description: CPU asignada a la tarea (en unidades de 1024)
   TaskMemory:
-    Type: Number
-    Default: 512
+    Type: String
+    Default: "512"
     Description: Memoria asignada a la tarea (en MB)
 
 Resources:
