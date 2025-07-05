@@ -48,10 +48,10 @@ def get_secret(secret_name: str = "rds!db-d9a26c18-a0cc-4a4c-aa73-820945d749e2",
         
     except ClientError as e:
         logger.error(f"Error al obtener el secreto: {str(e)}")
-        raise
+        return None
     except Exception as e:
         logger.error(f"Error inesperado: {str(e)}")
-        raise
+        return None
 
 def main():
     try:

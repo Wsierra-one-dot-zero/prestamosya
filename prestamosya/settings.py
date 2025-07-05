@@ -78,9 +78,11 @@ WSGI_APPLICATION = 'prestamosya.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+# Obtener credenciales de la base de datos
 db_secret = get_secret("rds!db-d9a26c18-a0cc-4a4c-aa73-820945d749e2") 
 
-try:
+# Configuración de la base de datos
+if db_secret and 'username' in db_secret and 'password' in db_secret:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
@@ -91,8 +93,8 @@ try:
             'PORT': '3306',
         }
     }
-except Exception as e:
-    print(f"Error al obtener las credenciales de la base de datos: {str(e)}")
+else:
+    print("No se pudieron obtener las credenciales de la base de datos. Usando SQLite.")
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
