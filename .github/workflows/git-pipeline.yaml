@@ -182,9 +182,11 @@ jobs:
           fi
       
 
-      - name: Show config.json
+      - name: parameter-overrides for cloudformation
         run: |
-          cat config/config.json
+          jq -r '.deploy_params.Parameters' config/config.json > config.json
+
+          cat config.json
 
       - name: Deploy Application
         if: github.ref == 'refs/heads/main'
@@ -194,7 +196,7 @@ jobs:
             --template-file infrastructure/template.yaml \
             --stack-name "PrestamosYa-${{ github.event.inputs.environment_name || 'dev' }}" \
             --capabilities CAPABILITY_NAMED_IAM \
-            --parameter-overrides file://config/config.json
+            --parameter-overrides file://config.json
 
       - name: Create GitHub tag
         if: github.ref == 'refs/heads/main'
