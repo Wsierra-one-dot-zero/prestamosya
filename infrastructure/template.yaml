@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Template para despliegue de la aplicación PrestamosYa en ECS'
+Description: 'Template para despliegue de la aplicación loans en ECS'
 
 Parameters:
   EnvironmentName:
@@ -20,7 +20,7 @@ Parameters:
     Description: Security Group para el servicio ECS
   ECRRepository:
     Type: String
-    Default: public.ecr.aws/prestamosya
+    Default: public.ecr.aws/loans
     Description: Nombre del repositorio ECR público
   ContainerPort:
     Type: String
@@ -38,6 +38,9 @@ Parameters:
     Type: String
     Default: "512"
     Description: Memoria asignada a la tarea (en MB)
+  ECSCluster:
+    Type: String
+    Description: Nombre del cluster ECS
 
 Resources:
   # IAM Role para el servicio ECS
@@ -108,14 +111,14 @@ Resources:
   CloudWatchLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub '/ecs/PrestamosYa-${EnvironmentName}'
+      LogGroupName: !Sub '/ecs/loans-${EnvironmentName}'
       RetentionInDays: 30
 
   # Task Definition
   TaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
-      Family: !Sub 'PrestamosYa-${EnvironmentName}'
+      Family: !Sub 'loans-${EnvironmentName}'
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
@@ -124,7 +127,7 @@ Resources:
       ExecutionRoleArn: !GetAtt ECSExecutionRole.Arn
       TaskRoleArn: !GetAtt ECSServiceRole.Arn
       ContainerDefinitions:
-        - Name: prestamosya
+        - Name: loans
           Image: !Sub '${ECRRepository}:latest'
           Essential: true
           PortMappings:
@@ -147,7 +150,7 @@ Resources:
   ECSService:
     Type: AWS::ECS::Service
     Properties:
-      ServiceName: !Sub 'PrestamosYa-${EnvironmentName}'
+      ServiceName: !Sub 'loans-${EnvironmentName}'
       Cluster: !Ref ECSCluster
       TaskDefinition: !Ref TaskDefinition
       DesiredCount: !Ref DesiredCount
@@ -160,7 +163,7 @@ Resources:
             - !Ref Subnet1
             - !Ref Subnet2
       LoadBalancers:
-        - ContainerName: prestamosya
+        - ContainerName: loans
           ContainerPort: !Ref ContainerPort
           TargetGroupArn: !Ref TargetGroup
       HealthCheckGracePeriodSeconds: 30
@@ -182,7 +185,7 @@ Resources:
   TargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      Name: !Sub 'PrestamosYa-${EnvironmentName}-TargetGroup'
+      Name: !Sub 'loans-${EnvironmentName}-TargetGroup'
       VpcId: !Ref VpcId
       Port: !Ref ContainerPort
       Protocol: HTTP
