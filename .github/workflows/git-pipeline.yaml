@@ -15,9 +15,15 @@ on:
         description: 'Deployment environment (dev, staging, production)'
         required: true
         default: 'dev'
+      region:
+        description: 'AWS region'
+        required: true
+        default: 'us-east-1'
 
 env:
   ECR_REPO_NAME: ${{ github.event.inputs.Name_Ecr_Repository || 'genos/dev/loans-app' }}
+  ENVIRONMENT_ID: ${{ github.event.inputs.environment_name || 'dev' }}
+  REGION: ${{ github.event.inputs.region || 'us-east-1' }}
 
 permissions:
   id-token: write
@@ -26,6 +32,7 @@ permissions:
 jobs:
   Build:
     name: Build APP
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -135,80 +142,101 @@ jobs:
           role-to-assume: ${{ secrets.AWS_IAM_ROLE }}
           aws-region: us-east-1
 
-      - name: Get Infrastructure Outputs
+      - name: Get config file
         id: get_infra_outputs
-        env:
-          ENV_NAME: ${{ github.event.inputs.environment_name || 'dev' }}
         run: |
-          # Install gettext for envsubst
-          sudo apt-get update && sudo apt-get install -y gettext
-          
-          # Create a temporary file with the environment variables
-          #echo "INFRA_STACK=Base-Infraestructure-${ENV_NAME}" > .env
-          
-          # Process the config file with environment variables
-          envsubst < config/config.json > config/config.tmp && mv config/config.tmp config/config.json
-          
-          # Get stack name from config
-          INFRA_STACK=$(jq -r '.infra_stack' config/config.json)
-          echo "Using stack: $INFRA_STACK"
-          
-          # Get all outputs from CloudFormation
-          outputs=$(aws cloudformation describe-stacks \
-            --stack-name "$INFRA_STACK" \
-            --query "Stacks[0].Outputs[*].[OutputKey, OutputValue]" \
-            --output json 2>/dev/null || echo '[]')
-          
-          echo "Outputs: $outputs"
-
-          if [ "$outputs" != "[]" ]; then
-            echo "Actualizando placeholders en config.json con outputs de CloudFormation..."
-            
-            # Crear una copia temporal del archivo
-            cp config/config.json config/config.tmp
-            
-            # Procesar cada par clave-valor
-            echo "$outputs" | jq -r '.[] | "\(.[0])	\(.[1])"' | while IFS=$'\t' read -r key value; do
-              echo "Reemplazando ${key} con ${value}"
-              
-              # Usar awk para reemplazar los valores de manera segura
-              awk -v key="$key" -v val="$value" '{
-                # Reemplazar ${KEY}
-                gsub("\$\(" key "\}", val);
-                # Reemplazar KEY (solo si está entre comillas o como valor completo)
-                gsub("\"" key "\"", "\"" val "\"");
-                print;
-              }' config/config.tmp > config/config.tmp2 && \
-              mv config/config.tmp2 config/config.tmp
-            done
-            
-            # Procesar el archivo con jq para formatearlo correctamente
-            jq '.' config/config.tmp > config/config.json
-            rm -f config/config.tmp
-            
-            echo "Configuración actualizada:"
-            jq '.' config/config.json
+          if [ -f config/config.json ]; then
+            echo "[INFO]Config file found"
+            echo "[EXEC] cp config/config.json ."
+            cp config/config.json .
+            ls config.json
           else
-            echo "Error: No se encontraron outputs en la pila $INFRA_STACK"
+            echo "[ERROR]Config file not found"
+          fi
+
+      - name: Insert environment variables
+        run: |
+          ENVIRONMENT_VAR='[
+              ["ENVIRONMENT_ID", "${ENVIRONMENT_ID}"],
+              ["REGION", "${REGION}"]
+          ]'
+
+          echo "$ENVIRONMENT_VAR" | jq -c '.[]' | while read -r item; do
+              key=$(echo "$item" | jq -r '.[0]')
+              value=$(echo "$item" | jq -r '.[1]')
+              echo "Clave: $key, Valor: $value"
+
+              sed -i "s|\${${key}}|$value|g" config.json
+
+          done
+
+          cat config.json
+      
+      - name: Insert variables from stack outputs
+        run: |
+          
+          if [[ ! -f "config.json" ]]; then
+            echo "Error: El archivo config.json no existe."
             exit 1
           fi
-      
+
+          config_json=$(cat config.json)
+
+          stack_outputs=$(echo "$config_json" | jq -r '.["stack-outputs"][]' 2>/dev/null)
+
+          if [[ -z "$stack_outputs" ]]; then
+            echo "No se encontraron stacks en 'stack-outputs'."
+            exit 0
+          fi
+
+          AWS_TARGET_REGION="us-east-1"
+
+          for stack_name in $stack_outputs; do
+            echo "Procesando stack: $stack_name"
+
+            stack_json=$(aws cloudformation describe-stacks --region "$AWS_TARGET_REGION" --stack-name "$stack_name")
+
+            outputs=$(echo "$stack_json" | jq -c '.Stacks[0].Outputs // []')
+
+            if [[ "$outputs" == "[]" ]]; then
+              echo "No hay salidas para el stack: $stack_name"
+              continue
+            fi
+
+            echo "$outputs" | jq -c '.[]' | while read -r output; do
+              output_key=$(echo "$output" | jq -r '.OutputKey')
+              output_value=$(echo "$output" | jq -r '.OutputValue')
+
+              key="${stack_name}:${output_key}"
+
+              echo "Reemplazando clave: ${key} con valor: ${output_value}"
+
+              sed -i "s|\${${key}}|${output_value}|g" config.json
+            done
+          done
+          echo "Archivo config.json actualizado:"
+          cat config.json | jq .
+          
 
       - name: parameter-overrides for cloudformation
         run: |
-          jq -r '.deploy_params.Parameters' config/config.json > config.json
+          jq -r '.deploy.Parameters' config.json > config-parameters.json
 
-          cat config.json
+          cat config-parameters.json
 
       - name: Deploy Application
         if: github.ref == 'refs/heads/main'
         run: |
-          # Deploy with CloudFormation
+          STACK_NAME=$(jq -r '.deploy.stack_name' config.json)
+
+          echo "[EXEC] aws cloudformation deploy --template-file infrastructure/template.yaml --stack-name $STACK_NAME --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND CAPABILITY_NAMED_IAM --parameter-overrides file://config-parameters.json"
+          echo "[INFO] Creating or updating stack $STACK_NAME"
+
           aws cloudformation deploy \
             --template-file infrastructure/template.yaml \
-            --stack-name "PrestamosYa-${{ github.event.inputs.environment_name || 'dev' }}" \
-            --capabilities CAPABILITY_NAMED_IAM \
-            --parameter-overrides file://config.json
+            --stack-name "$STACK_NAME" \
+            --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND CAPABILITY_NAMED_IAM \
+            --parameter-overrides file://config-parameters.json
 
       - name: Create GitHub tag
         if: github.ref == 'refs/heads/main'

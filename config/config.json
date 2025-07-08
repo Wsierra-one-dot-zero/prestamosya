@@ -1,10 +1,13 @@
 {
-  "infra_stack": "${ENV_NAME}-Base-Infraestructure-Stack",
-  "deploy_params": {
+  "stack-outputs": [
+    "${ENVIRONMENT_ID}-Base-Infraestructure-Stack"
+  ],
+  "deploy": {
+    "stack-name": "${ENVIRONMENT_ID}-Base-Infraestructure-Stack",
     "Parameters": [
       {
         "ParameterKey": "EnvironmentName",
-        "ParameterValue": "${ENV_NAME}"
+        "ParameterValue": "${ENVIRONMENT_ID}"
       },
       {
         "ParameterKey": "VpcId",
