@@ -3,7 +3,7 @@
     "${ENVIRONMENT_ID}-Base-Infraestructure-Stack"
   ],
   "deploy": {
-    "stack-name": "${ENVIRONMENT_ID}-Base-Infraestructure-Stack",
+    "stack-name": "${ENVIRONMENT_ID}-loans-Stack",
     "Parameters": [
       {
         "ParameterKey": "EnvironmentName",
@@ -11,31 +11,31 @@
       },
       {
         "ParameterKey": "VpcId",
-        "ParameterValue": "${VPCId}"
+        "ParameterValue": "${${ENVIRONMENT_ID}-Base-Infraestructure-Stack:VPCId}"
       },
       {
         "ParameterKey": "Subnet1",
-        "ParameterValue": "${PublicSubnet1}"
+        "ParameterValue": "${${ENVIRONMENT_ID}-Base-Infraestructure-Stack:PublicSubnet1}"
       },
       {
         "ParameterKey": "Subnet2",
-        "ParameterValue": "${PublicSubnet2}"
+        "ParameterValue": "${${ENVIRONMENT_ID}-Base-Infraestructure-Stack:PublicSubnet2}"
       },
       {
         "ParameterKey": "SecurityGroup",
-        "ParameterValue": "${SecurityGroupId}"
+        "ParameterValue": "${${ENVIRONMENT_ID}-Base-Infraestructure-Stack:SecurityGroupId}"
       },
       {
         "ParameterKey": "LoadBalancer",
-        "ParameterValue": "${ALBDNSName}"
+        "ParameterValue": "${${ENVIRONMENT_ID}-Base-Infraestructure-Stack:ALBDNSName}"
       },
       {
         "ParameterKey": "LoadBalancerARN",
-        "ParameterValue": "${ALBArn}"
+        "ParameterValue": "${${ENVIRONMENT_ID}-Base-Infraestructure-Stack:ALBArn}"
       },
       {
         "ParameterKey": "ClusterName",
-        "ParameterValue": "${ECSClusterName}"
+        "ParameterValue": "${${ENVIRONMENT_ID}-Base-Infraestructure-Stack:ECSClusterName}"
       },
       {
         "ParameterKey": "ECRRepository",
