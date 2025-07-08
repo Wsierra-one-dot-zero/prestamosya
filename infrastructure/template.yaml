@@ -41,6 +41,9 @@ Parameters:
   ClusterName:
     Type: String
     Description: Nombre del cluster ECS
+  LoadBalancerARN:
+    Type: String
+    Description: ARN del Load Balancer
 
 Resources:
   # IAM Role para el servicio ECS
@@ -196,6 +199,16 @@ Resources:
       HealthCheckTimeoutSeconds: 10
       HealthyThresholdCount: 3
       UnhealthyThresholdCount: 3
+
+  Listener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancerARN
+      Port: !Ref ContainerPort
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
 
 Outputs:
   ServiceArn:
