@@ -226,7 +226,7 @@ jobs:
 
       - name: Deploy Application
         run: |
-          STACK_NAME=$(jq -r '.deploy.stack_name' config.json)
+          STACK_NAME=$(jq -r '.deploy."stack-name"' config.json)
 
           echo "[EXEC] aws cloudformation deploy --template-file infrastructure/template.yaml --stack-name $STACK_NAME --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND CAPABILITY_NAMED_IAM --parameter-overrides file://config-parameters.json"
           echo "[INFO] Creating or updating stack $STACK_NAME"
