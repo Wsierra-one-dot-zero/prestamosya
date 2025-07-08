@@ -225,7 +225,6 @@ jobs:
           cat config-parameters.json
 
       - name: Deploy Application
-        if: github.ref == 'refs/heads/main'
         run: |
           STACK_NAME=$(jq -r '.deploy.stack_name' config.json)
 
