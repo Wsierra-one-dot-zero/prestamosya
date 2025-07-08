@@ -38,7 +38,7 @@ Parameters:
     Type: String
     Default: "512"
     Description: Memoria asignada a la tarea (en MB)
-  ECSCluster:
+  ClusterName:
     Type: String
     Description: Nombre del cluster ECS
 
@@ -151,7 +151,7 @@ Resources:
     Type: AWS::ECS::Service
     Properties:
       ServiceName: !Sub 'loans-${EnvironmentName}'
-      Cluster: !Ref ECSCluster
+      Cluster: !Ref ClusterName
       TaskDefinition: !Ref TaskDefinition
       DesiredCount: !Ref DesiredCount
       NetworkConfiguration:
