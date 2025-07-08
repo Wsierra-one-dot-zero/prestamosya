@@ -157,8 +157,8 @@ jobs:
       - name: Insert environment variables
         run: |
           ENVIRONMENT_VAR='[
-              ["ENVIRONMENT_ID", "$ENVIRONMENT_ID"],
-              ["REGION", "$REGION"]
+              ["ENVIRONMENT_ID", "${{ env.ENVIRONMENT_ID }}"],
+              ["REGION", "${{ env.REGION }}"]
           ]'
 
           echo "$ENVIRONMENT_VAR" | jq -c '.[]' | while read -r item; do
