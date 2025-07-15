@@ -8,8 +8,17 @@ import sys
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def get_secret(secret_name: str = "rds!db-d9a26c18-a0cc-4a4c-aa73-820945d749e2", 
-               region_name: str = "us-east-1") -> dict:
+def get_secret(secret_name: str = None, region_name: str = None) -> dict:
+    """
+    Obtiene un secreto de AWS Secrets Manager
+    
+    Args:
+        secret_name: Nombre del secreto (opcional, se obtendrá de la variable de entorno DB_SECRET_NAME si no se especifica)
+        region_name: Nombre de la región AWS (opcional, se obtendrá de la variable de entorno AWS_REGION si no se especifica)
+        
+    Returns:
+        dict: Contenido del secreto como diccionario
+    """
     """
     Obtiene un secreto de AWS Secrets Manager
     
@@ -21,6 +30,15 @@ def get_secret(secret_name: str = "rds!db-d9a26c18-a0cc-4a4c-aa73-820945d749e2",
         dict: Contenido del secreto como diccionario
     """
     try:
+        # Obtener region y nombre del secreto de variables de entorno si no se especifican
+        if not secret_name:
+            secret_name = os.getenv('DB_SECRET_NAME')
+            if not secret_name:
+                raise ValueError("No se especificó el nombre del secreto y la variable DB_SECRET_NAME no está configurada")
+        
+        if not region_name:
+            region_name = os.getenv('AWS_REGION', 'us-east-1')
+            
         # Crear sesión y cliente de Secrets Manager
         session = boto3.session.Session()
         client = session.client(
@@ -46,27 +64,7 @@ def get_secret(secret_name: str = "rds!db-d9a26c18-a0cc-4a4c-aa73-820945d749e2",
         
         return secret
         
-    except ClientError as e:
+    except Exception as e:
         logger.error(f"Error al obtener el secreto: {str(e)}")
         return None
-    except Exception as e:
-        logger.error(f"Error inesperado: {str(e)}")
-        return None
-
-def main():
-    try:
-        # Ejemplo de uso
-        secret_name = "rds!db-d9a26c18-a0cc-4a4c-aa73-820945d749e2"
-        region_name = "us-east-1"
-        
-        secret = get_secret(secret_name, region_name)
-        print("\nContenido del secreto:")
-        print(json.dumps(secret, indent=2))
-        
-    except Exception as e:
-        logger.error(f"Error en la ejecución principal: {str(e)}")
-        sys.exit(1)
-
-if __name__ == "__main__":
-    main()
 

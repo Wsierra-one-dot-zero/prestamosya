@@ -78,29 +78,23 @@ WSGI_APPLICATION = 'prestamosya.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-# Obtener credenciales de la base de datos
-db_secret = get_secret("rds!db-d9a26c18-a0cc-4a4c-aa73-820945d749e2") 
+# Obtener credenciales de la base de datos desde AWS Secrets Manager
+db_secret = get_secret(os.getenv('DB_SECRET_NAME'))
 
 # Configuración de la base de datos
 if db_secret and 'username' in db_secret and 'password' in db_secret:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
-            'NAME': 'loans',
+            'NAME': db_secret.get('dbname', 'loans'),
             'USER': db_secret['username'],
             'PASSWORD': db_secret['password'],
-            'HOST': 'my-mysql-db.cup8qceyub9n.us-east-1.rds.amazonaws.com',
-            'PORT': '3306',
+            'HOST': db_secret.get('host', 'my-mysql-db.cup8qceyub9n.us-east-1.rds.amazonaws.com'),
+            'PORT': db_secret.get('port', '3306'),
         }
     }
 else:
-    print("No se pudieron obtener las credenciales de la base de datos. Usando SQLite.")
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
+    raise Exception("No se pudieron obtener las credenciales de la base de datos desde AWS Secrets Manager. Verifique que la variable DB_SECRET_NAME está configurada correctamente.")
 
 
 # Password validation

@@ -32,7 +32,6 @@ permissions:
 jobs:
   Build:
     name: Build APP
-    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -129,7 +128,7 @@ jobs:
 
   Deploy:
     name: Deploy Application
-    #needs: Build
+    needs: Build
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment_name || 'dev' }}
     steps:
@@ -223,6 +222,13 @@ jobs:
           jq -r '.deploy.Parameters' config.json > config-parameters.json
 
           cat config-parameters.json
+
+          SECRET_NAME=$(jq -r '.[] | select(.ParameterKey == "SecretName").ParameterValue' config-parameters.json)
+          echo 'Nombre del secreto: $SECRET_NAME'
+
+          SECRET_ARN=$(aws secretsmanager describe-secret --secret-id $SECRET_NAME --region us-east-1 --query 'ARN' --output text)
+
+          jq '. += [{"ParameterKey": "SecretArn", "ParameterValue": "'${SECRET_ARN}'"}]' "config-parameters.json" > temp.json && mv temp.json config-parameters.json
 
       - name: Deploy Application
         run: |

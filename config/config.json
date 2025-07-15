@@ -47,7 +47,7 @@
       },
       {
         "ParameterKey": "DesiredCount",
-        "ParameterValue": "0"
+        "ParameterValue": "1"
       },
       {
         "ParameterKey": "TaskCpu",
@@ -56,6 +56,10 @@
       {
         "ParameterKey": "TaskMemory",
         "ParameterValue": "512"
+      },
+      {
+        "ParameterKey": "SecretName",
+        "ParameterValue": "${ENVIRONMENT_ID}/loans/data/credentials"
       }
     ]
   }
