@@ -3,6 +3,7 @@ from botocore.exceptions import ClientError
 import logging
 import json
 import sys
+import os
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
@@ -19,17 +20,14 @@ def get_secret(secret_name: str = None, region_name: str = None) -> dict:
     Returns:
         dict: Contenido del secreto como diccionario
     """
-    """
-    Obtiene un secreto de AWS Secrets Manager
-    
-    Args:
-        secret_name: Nombre del secreto
-        region_name: Nombre de la región AWS
-        
-    Returns:
-        dict: Contenido del secreto como diccionario
-    """
     try:
+        # Verificar que las credenciales de AWS están disponibles
+        try:
+            boto3.client('sts').get_caller_identity()
+        except Exception as e:
+            logger.error(f"No se pudieron obtener las credenciales de AWS: {str(e)}")
+            raise Exception("No se pudieron obtener las credenciales de AWS. Verifique que las credenciales están configuradas correctamente.")
+
         # Obtener region y nombre del secreto de variables de entorno si no se especifican
         if not secret_name:
             secret_name = os.getenv('DB_SECRET_NAME')
