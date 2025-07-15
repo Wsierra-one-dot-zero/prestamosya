@@ -117,14 +117,14 @@ Resources:
   CloudWatchLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub '/ecs/loans-${EnvironmentName}'
+      LogGroupName: !Sub '/ecs/${EnvironmentName}-loans'
       RetentionInDays: 30
 
   # Task Definition
   TaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
-      Family: !Sub 'loans-${EnvironmentName}'
+      Family: !Sub '${EnvironmentName}-loans'
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
@@ -156,10 +156,11 @@ Resources:
   ECSService:
     Type: AWS::ECS::Service
     Properties:
-      ServiceName: !Sub 'loans-${EnvironmentName}'
+      ServiceName: !Sub '${EnvironmentName}-loans'
       Cluster: !Ref ClusterName
       TaskDefinition: !Ref TaskDefinition
       DesiredCount: !Ref DesiredCount
+      LaunchType: FARGATE
       NetworkConfiguration:
         AwsvpcConfiguration:
           AssignPublicIp: ENABLED
@@ -194,7 +195,7 @@ Resources:
   TargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      Name: !Sub 'loans-${EnvironmentName}-TargetGroup'
+      Name: !Sub '${EnvironmentName}-loans-TargetGroup'
       VpcId: !Ref VpcId
       Port: !Ref ContainerPort
       Protocol: HTTP
