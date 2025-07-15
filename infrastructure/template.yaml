@@ -87,6 +87,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - 'secretsmanager:GetSecretValue'
+                  - 'secretsmanager:DescribeSecret'
                 Resource: !Ref SecretArn
 
   # IAM Role para el task execution
@@ -112,6 +113,11 @@ Resources:
                   - 'logs:CreateLogStream'
                   - 'logs:PutLogEvents'
                 Resource: '*'
+              - Effect: Allow
+                Action:
+                  - 'secretsmanager:GetSecretValue'
+                  - 'secretsmanager:DescribeSecret'
+                Resource: !Ref SecretArn
 
   # Log Group para CloudWatch
   CloudWatchLogGroup:
