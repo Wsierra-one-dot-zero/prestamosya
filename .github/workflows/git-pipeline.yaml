@@ -69,10 +69,6 @@ jobs:
           echo "IMAGE_TAG=${{ github.sha }}"
           echo "LATEST_TAG=$LATEST_TAG"
 
-      - name: Run Django collectstatic
-        run: |
-          python manage.py collectstatic --noinput --settings=prestamosya.settings.ci
-
       - name: Ensure ECR Public repository exists
         run: |
           set -e
