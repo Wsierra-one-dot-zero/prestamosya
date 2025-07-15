@@ -71,7 +71,7 @@ jobs:
 
       - name: Run Django collectstatic
         run: |
-          python manage.py collectstatic --noinput
+          python manage.py collectstatic --noinput --settings=prestamosya.settings.ci
 
       - name: Ensure ECR Public repository exists
         run: |
