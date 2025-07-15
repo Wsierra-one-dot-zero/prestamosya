@@ -176,6 +176,9 @@ Resources:
       DeploymentConfiguration:
         MaximumPercent: 200
         MinimumHealthyPercent: 50
+        DeploymentCircuitBreaker:
+          Enable: true
+          Rollback: true
       CapacityProviderStrategy:
         - CapacityProvider: FARGATE_SPOT
           Weight: 1
