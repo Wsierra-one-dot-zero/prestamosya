@@ -45,20 +45,24 @@ def get_secret(secret_name: str = None, region_name: str = None) -> dict:
         )
         
         # Obtener el valor del secreto
-        logger.info(f"Obteniendo secreto: {secret_name} de región: {region_name}")
-        get_secret_value_response = client.get_secret_value(
-            SecretId=secret_name
-        )
+        logger.info(f"Obteniendo credenciales de la base de datos")
+        try:
+            get_secret_value_response = client.get_secret_value(
+                SecretId=secret_name
+            )
+        except ClientError as e:
+            logger.error(f"Error al obtener el secreto: {str(e)}")
+            raise Exception(f"Error al obtener el secreto: {str(e)}")
         
         # Manejar diferentes tipos de secretos
         if 'SecretString' in get_secret_value_response:
             secret = json.loads(get_secret_value_response['SecretString'])
-            logger.info("Secreto obtenido exitosamente")
+            logger.info("Credenciales obtenidas exitosamente")
         else:
             # Si es un secreto binario
             decoded_binary_secret = get_secret_value_response['SecretBinary'].decode('utf-8')
             secret = json.loads(decoded_binary_secret)
-            logger.info("Secreto binario obtenido exitosamente")
+            logger.info("Credenciales binarias obtenidas exitosamente")
         
         return secret
         

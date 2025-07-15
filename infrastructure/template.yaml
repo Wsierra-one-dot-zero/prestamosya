@@ -47,6 +47,9 @@ Parameters:
   SecretArn:
     Type: String
     Description: ARN del Secret Manager
+  SecretName:
+    Type: String
+    Description: Nombre del Secret Manager
 
 Resources:
   # IAM Role para el servicio ECS
@@ -156,7 +159,7 @@ Resources:
               Value: !Ref AWS::Region
           Secrets:
             - Name: DB_SECRET_NAME
-              ValueFrom: !Ref SecretArn
+              ValueFrom: !Ref SecretName
 
   # Service
   ECSService:
