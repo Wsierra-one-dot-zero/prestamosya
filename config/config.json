@@ -39,7 +39,7 @@
       },
       {
         "ParameterKey": "ECRRepository",
-        "ParameterValue": "public.ecr.aws/prestamosya"
+        "ParameterValue": "public.ecr.aws/p8l8p7u7/genos/dev/loans-app"
       },
       {
         "ParameterKey": "ContainerPort",
