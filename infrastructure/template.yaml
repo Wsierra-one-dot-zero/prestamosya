@@ -159,8 +159,10 @@ Resources:
           Environment:
             - Name: AWS_REGION
               Value: !Ref AWS::Region
-          Secrets:
             - Name: DB_SECRET_NAME
+              Value: !Ref SecretName
+          Secrets:
+            - Name: DB_SECRET_ARN
               ValueFrom: !Ref SecretArn
 
   # Service
