@@ -1,6 +1,7 @@
 from django.http import JsonResponse
 from django.views import View
 from django.db import connection
+from django.utils import timezone
 
 class HealthCheckView(View):
     """
