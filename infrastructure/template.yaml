@@ -126,9 +126,9 @@ Resources:
                 Resource: !Ref SecretArn
               - Effect: Allow
                 Action:
-                  - 'ssm:GetParameters'
                   - 'kms:Decrypt'
-                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:*'
+                  - 'kms:GenerateDataKey'
+                Resource: '*'
 
   # Log Group para CloudWatch
   CloudWatchLogGroup:
@@ -165,8 +165,6 @@ Resources:
           Environment:
             - Name: AWS_REGION
               Value: !Ref AWS::Region
-            - Name: PARAMETER_STORE_PATH
-              Value: !Sub '/${EnvironmentName}/'
           Secrets:
             - Name: DB_SECRET_NAME
               ValueFrom: !Ref SecretName
