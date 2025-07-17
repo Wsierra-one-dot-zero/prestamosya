@@ -30,7 +30,14 @@ SECRET_KEY = 'django-insecure-w!%ktlcl24+b)e3v*0*k4+$ykq00i=a&5t)5%97vud8c2u!%6n
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+# Configuración dinámica de ALLOWED_HOSTS para ECS
+import socket
+ALLOWED_HOSTS = [
+    '.elb.amazonaws.com',  # Para el Application Load Balancer
+    'localhost',
+    '127.0.0.1',
+    socket.gethostname(),  # Nombre de host de la tarea ECS
+]
 
 
 # Application definition

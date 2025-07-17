@@ -223,11 +223,13 @@ Resources:
       Protocol: HTTP
       TargetType: ip
       HealthCheckIntervalSeconds: 30
-      HealthCheckPath: /
+      HealthCheckPath: /health/
       HealthCheckProtocol: HTTP
-      HealthCheckTimeoutSeconds: 10
+      HealthCheckTimeoutSeconds: 5
       HealthyThresholdCount: 3
-      UnhealthyThresholdCount: 3
+      UnhealthyThresholdCount: 2
+      Matcher:
+        HttpCode: '200-399'
 
   Listener:
     Type: AWS::ElasticLoadBalancingV2::Listener
