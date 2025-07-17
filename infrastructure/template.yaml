@@ -88,11 +88,6 @@ Resources:
                   - 'ec2:DescribeSecurityGroups'
                   - 'ec2:DescribeVpcs'
                 Resource: '*'
-              - Effect: Allow
-                Action:
-                  - 'secretsmanager:GetSecretValue'
-                  - 'secretsmanager:DescribeSecret'
-                Resource: !Ref SecretArn
 
   # IAM Role para el task execution
   ECSExecutionRole:
@@ -122,13 +117,12 @@ Resources:
                 Action:
                   - 'secretsmanager:GetSecretValue'
                   - 'secretsmanager:DescribeSecret'
-                  - 'kms:Decrypt'
                 Resource: !Ref SecretArn
               - Effect: Allow
                 Action:
                   - 'kms:Decrypt'
                   - 'kms:GenerateDataKey'
-                Resource: '*'
+                Resource: !Sub 'arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/*'
 
   # Log Group para CloudWatch
   CloudWatchLogGroup:
@@ -167,7 +161,7 @@ Resources:
               Value: !Ref AWS::Region
           Secrets:
             - Name: DB_SECRET_NAME
-              ValueFrom: !Ref SecretName
+              ValueFrom: !Ref SecretArn
 
   # Service
   ECSService:
