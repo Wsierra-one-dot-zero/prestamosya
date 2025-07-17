@@ -122,10 +122,12 @@ Resources:
                 Action:
                   - 'secretsmanager:GetSecretValue'
                   - 'secretsmanager:DescribeSecret'
+                  - 'kms:Decrypt'
                 Resource: !Ref SecretArn
               - Effect: Allow
                 Action:
                   - 'ssm:GetParameters'
+                  - 'kms:Decrypt'
                 Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:*'
 
   # Log Group para CloudWatch
