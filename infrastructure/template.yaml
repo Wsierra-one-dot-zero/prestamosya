@@ -88,6 +88,16 @@ Resources:
                   - 'ec2:DescribeSecurityGroups'
                   - 'ec2:DescribeVpcs'
                 Resource: '*'
+              - Effect: Allow
+                Action:
+                  - 'secretsmanager:GetSecretValue'
+                  - 'secretsmanager:DescribeSecret'
+                Resource: !Ref SecretArn
+              - Effect: Allow
+                Action:
+                  - 'kms:Decrypt'
+                  - 'kms:GenerateDataKey'
+                Resource: !Sub 'arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/*'
 
   # IAM Role para el task execution
   ECSExecutionRole:
