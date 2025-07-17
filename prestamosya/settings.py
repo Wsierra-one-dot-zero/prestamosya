@@ -31,13 +31,20 @@ SECRET_KEY = 'django-insecure-w!%ktlcl24+b)e3v*0*k4+$ykq00i=a&5t)5%97vud8c2u!%6n
 DEBUG = True
 
 # Configuración dinámica de ALLOWED_HOSTS para ECS
+import os
 import socket
-ALLOWED_HOSTS = [
-    '.elb.amazonaws.com',  # Para el Application Load Balancer
-    'localhost',
-    '127.0.0.1',
-    socket.gethostname(),  # Nombre de host de la tarea ECS
-]
+
+# Si estamos en ECS, permitir todas las IPs
+if os.environ.get('AWS_EXECUTION_ENV') or os.environ.get('ECS_CONTAINER_METADATA_URI'):
+    ALLOWED_HOSTS = ['*']
+else:
+    # Configuración para desarrollo local
+    ALLOWED_HOSTS = [
+        'localhost',
+        '127.0.0.1',
+        '.elb.amazonaws.com',
+        socket.gethostname(),
+    ]
 
 
 # Application definition
