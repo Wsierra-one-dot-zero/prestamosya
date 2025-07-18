@@ -177,12 +177,12 @@ Resources:
           Secrets:
             - Name: DB_SECRET_ARN
               ValueFrom: !Ref SecretArn
-          # HealthCheck:
-          #   Command: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
-          #   Interval: 30
-          #   Timeout: 5
-          #   Retries: 3
-          #   StartPeriod: 60
+          HealthCheck:
+            Command: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+            Interval: 30
+            Timeout: 5
+            Retries: 3
+            StartPeriod: 60
 
   # Service
   ECSService:
