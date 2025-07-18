@@ -50,6 +50,9 @@ Parameters:
   SecretName:
     Type: String
     Description: Nombre del Secret Manager
+  TargetGroupARN:
+    Type: String
+    Description: ARN del Target Group
 
 Resources:
   # IAM Role para el servicio ECS
@@ -174,6 +177,12 @@ Resources:
           Secrets:
             - Name: DB_SECRET_ARN
               ValueFrom: !Ref SecretArn
+          HealthCheck:
+            Command: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+            Interval: 30
+            Timeout: 5
+            Retries: 3
+            StartPeriod: 60
 
   # Service
   ECSService:
@@ -194,7 +203,7 @@ Resources:
       LoadBalancers:
         - ContainerName: loans
           ContainerPort: !Ref ContainerPort
-          TargetGroupArn: !Ref TargetGroup
+          TargetGroupArn: !Ref TargetGroupARN
       HealthCheckGracePeriodSeconds: 30
       DeploymentConfiguration:
         MaximumPercent: 200
@@ -213,34 +222,6 @@ Resources:
       EnableECSManagedTags: true
       PropagateTags: SERVICE
 
-  # Target Group
-  TargetGroup:
-    Type: AWS::ElasticLoadBalancingV2::TargetGroup
-    Properties:
-      Name: !Sub '${EnvironmentName}-loans-TargetGroup'
-      VpcId: !Ref VpcId
-      Port: !Ref ContainerPort
-      Protocol: HTTP
-      TargetType: ip
-      HealthCheckIntervalSeconds: 30
-      HealthCheckPath: /health/
-      HealthCheckProtocol: HTTP
-      HealthCheckTimeoutSeconds: 5
-      HealthyThresholdCount: 3
-      UnhealthyThresholdCount: 2
-      Matcher:
-        HttpCode: '200-399'
-
-  Listener:
-    Type: AWS::ElasticLoadBalancingV2::Listener
-    Properties:
-      LoadBalancerArn: !Ref LoadBalancerARN
-      Port: !Ref ContainerPort
-      Protocol: HTTP
-      DefaultActions:
-        - Type: forward
-          TargetGroupArn: !Ref TargetGroup
-
 Outputs:
   ServiceArn:
     Description: ARN del servicio ECS
@@ -248,6 +229,3 @@ Outputs:
   TaskDefinitionArn:
     Description: ARN de la definición de tarea
     Value: !Ref TaskDefinition
-  TargetGroupArn:
-    Description: ARN del Target Group
-    Value: !Ref TargetGroup

@@ -60,6 +60,10 @@
       {
         "ParameterKey": "SecretName",
         "ParameterValue": "${ENVIRONMENT_ID}/loans/data/credentials"
+      },
+      {
+        "ParameterKey": "TargetGroupARN",
+        "ParameterValue": "${${ENVIRONMENT_ID}-Base-Infraestructure-Stack:TargetGroupARN}"
       }
     ]
   }
