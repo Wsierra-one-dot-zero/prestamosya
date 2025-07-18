@@ -63,7 +63,7 @@
       },
       {
         "ParameterKey": "TargetGroupARN",
-        "ParameterValue": "${${ENVIRONMENT_ID}-Base-Infraestructure-Stack:TargetGroupARN}"
+        "ParameterValue": "${${ENVIRONMENT_ID}-Base-Infraestructure-Stack:TargetGroupArn}"
       }
     ]
   }
