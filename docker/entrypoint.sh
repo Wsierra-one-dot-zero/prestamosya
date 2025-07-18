@@ -15,6 +15,12 @@ if [ -z "$DB_SECRET_NAME" ]; then
     exit 1
 fi
 
+# Aplicar migraciones
+python manage.py migrate --noinput || {
+    echo "ERROR: Fallo al aplicar migraciones"
+    exit 1
+}
+
 # Recolectar archivos estáticos
 python manage.py collectstatic --noinput || {
     echo "ERROR: Fallo al recolectar archivos estáticos"
